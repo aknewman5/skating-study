@@ -22,32 +22,11 @@ When a candidate asks a rule lookup question ("What is...?", "How many...?"), gi
 SPIN FRAMEWORK — PHASES 1-4
 ================================================================
 
-PHASE 1: IS IT A SPIN? (Qualification — Practical Flowchart)
-
-Q1: Does the element have 3 or more continuous revolutions on the ice?
-- YES → Proceed to Q2
-- NO → Go to Q5
-
-Q2: Did the spin start within the required program time + 10 seconds?
-- YES → Proceed to Q3
-- NO → Not a spin — no box (ignored by Technical Panel) [TPH-S §CALL.TIME]
-
-Q3: Were the revolutions performed after a fall on an intended spin?
-- YES → Not a spin — no box (post-fall time-filling only) [TPH-S §SPIN.GEN.FALL]
-- NO → Proceed to Q4
-
-Q4: Were the revolutions performed within a Choreographic Sequence (ChSq)?
-- YES → Not a spin — no box (ChSq: artistic, not evaluated) [TPH-S §CHOREO.CL.SPINS]
-- NO → SPIN — Occupies a box. Proceed to Phase 2.
-
-Q5: Did the skater fall or stop before completing 3 revolutions in an intended spin?
-- YES → SPIN — Occupies a box (intended spin; value assessed before fall/stop)
-- NO → Skating movement — no box
-
-Key distinctions:
-- The 3-revolution threshold is NOT an absolute gate. If the Technical Panel recognizes a clear intended spin that fails (fall or stops short), it still occupies a box and is evaluated up to the point of failure.
-- A listed jump followed by rotation is NOT a spin — it is a jump (even if it looks like spinning).
-- The difference between a "failed intended spin" (box) and a "skating movement" (no box) is determined by the Technical Panel based on clear preparation and intent to spin.
+PHASE 1: IS IT A SPIN? (Qualification)
+- Must have 3+ continuous revolutions on the ice
+- Must be continuous rotational movement on one skating foot
+- If fewer than 3 revolutions → it is a "skating movement," not a spin — no box, no call
+- A listed jump followed by rotation is NOT a spin — it is a jump (even if it looks like spinning)
 
 PHASE 2: WHAT CODE? (Element Identification)
 The spin code is built from prefixes and a position suffix:
@@ -75,26 +54,56 @@ Key Phase 2 rules:
 - If a feature IS executed in the final windup (edge change, DV, etc.), it becomes a combination spin
 - A spin with only non-basic positions (no C, S, U, or L with 2+ revolutions) has No Value
 
+PHASE 3: DOES IT HAVE VALUE? (Basic Requirements)
+Phase 3 has FIVE sub-topics that must ALL be covered when teaching. Do not skip any.
+
+PHASE 3A — Revolution Minimums (All Spins):
+- Every basic position requires a MINIMUM of 2 continuous revolutions without interruption
+- If 2 revolutions are not achieved in a position, that position is NOT COUNTED
+- Variations of head, arms, or free leg, and speed fluctuations ARE permitted within those 2 revolutions
+
+PHASE 3B — Change-of-Foot Requirements:
+- For ALL change-of-foot spins: the change of foot must be preceded AND followed by a spin position with at least 3 revolutions
+- SHORT PROGRAM: If fewer than 3 revolutions on either foot → NO VALUE
+- FREE SKATE: If fewer than 3 revolutions on either foot → marked with "V" (reduced base value, NOT no value)
+- If spinning centers before and after change of foot are too far apart AND the "two spins" criteria is met (curve of exit after first part AND curve of entry into second part) → only the part before the change of foot is called
+- If there is ONLY a curve of exit OR a curve of entry (not both) → judges reduce GOE for "change of foot poorly done" but the spin is still valid
+- SP: Second change of foot attempted → wrong element → NO VALUE
+- SP: One-position spin with CoF where one foot has no basic position with 2+ revolutions → NO VALUE
+- FS: One-position spin with CoF where one foot has no basic position with 2+ revolutions → "V" flag
+
+PHASE 3C — Combination Spin Requirements (CoSp):
+- Must include a minimum of 2 different basic positions with 2 revolutions in each
+- 3 basic positions required for FULL value; only 2 basic positions → "V" flag
+- Changing to a non-basic position is NOT considered a change of position
+- SP: CoSp with fewer than 2 basic positions → NO VALUE
+- FS: Clear attempt at CoSp resulting in only 1 basic position → called as CoSp NO VALUE
+
+PHASE 3D — Flying Spin Requirements:
+- Must have a clear visible jump (flying entry)
+- Step-over instead of true flying entry → "V" flag (reduced base value) and judges reduce GOE
+- No previous rotation on the ice before take-off is permitted
+- The name of the flying spin corresponds to its LANDING position (not the air position)
+- The flying air position MAY be different from the landing position
+- SP: Required 8 revolutions in the landing position (lack reflected by judges in GOE)
+- The required revolutions can be in any variation of the landing position
+
+PHASE 3E — V Flag and No Value Summary:
 V Flag (reduced base value) — 4 scenarios:
 1. Combination spin (CoSp) with only 2 basic positions instead of 3
 2. Flying spin with a step-over instead of a true flying entry
 3. Change-of-foot spin in FS where one foot has fewer than 3 revolutions
-4. One-position change-of-foot spin where one foot has no basic position with 2+ revolutions
+4. One-position change-of-foot spin in FS where one foot has no basic position with 2+ revolutions
 
 No Value scenarios:
-- Fewer than 3 total revolutions (not a spin at all)
+- Fewer than 3 total revolutions (not a spin at all — it is a skating movement)
 - No basic position with 2 continuous revolutions
-- SP: Change of foot without 3 revolutions on each foot
+- SP: Change-of-foot spin without 3 revolutions on each foot
 - SP: Second change of foot attempted (wrong element)
 - SP: Spinning centers too far apart after change of foot ("two spins" criteria)
-- CoSp with fewer than 2 basic positions
-
-PHASE 3: DOES IT HAVE VALUE? (Basic Requirements)
-- Every basic position requires a MINIMUM of 2 continuous revolutions without interruption
-- If 2 revolutions are not achieved in a position, that position is NOT COUNTED
-- Variations of head, arms, or free leg, and speed fluctuations ARE permitted within those 2 revolutions
-- For change-of-foot spins: minimum 3 revolutions on EACH foot
-- For CoSp: must include at minimum 2 different basic positions (3 for full value)
+- SP: CoSp with fewer than 2 basic positions
+- SP: One-position CoF spin with no basic position on one foot
+- FS: Clear attempt at CoSp with only 1 basic position → CoSp No Value
 
 PHASE 4: WHAT LEVEL? (Feature Assessment)
 A spin's level is determined by the number of valid features achieved:
@@ -1206,7 +1215,7 @@ Keep responses focused and clear. Use concrete examples. When explaining why an 
   
   const body = isArtifact ? {
     model: "claude-sonnet-4-20250514",
-    max_tokens: 1000,
+    max_tokens: 4096,
     system: systemPrompt,
     messages,
   } : {
@@ -1883,16 +1892,26 @@ function LearnMode({ category, cat, name, updateProgress, appSettings, setAppSet
 
   const systemExtra = `You are in LEARN MODE for: ${cat.label.toUpperCase()}.
 The candidate's name is ${name}. 
-Your job: Guide them through the ${cat.label} framework step by step. Start at Phase 1 (the most basic question) and only advance when they demonstrate understanding.
-Teaching approach:
+Your job: Guide them through the ${cat.label} framework step by step, phase by phase, sub-topic by sub-topic.
+
+MANDATORY COVERAGE RULES — CRITICAL, DO NOT SKIP:
+- You MUST cover EVERY sub-topic within a phase before moving to the next phase.
+- For spins, Phase 3 has five sub-topics you MUST cover in order: 3A (revolution minimums), 3B (change-of-foot requirements including SP vs FS differences), 3C (CoSp position requirements), 3D (flying spin requirements), 3E (V flag and No Value summary).
+- When you finish a sub-topic, explicitly name the next one: "Now let's move to Phase 3B — change-of-foot requirements."
+- Do NOT jump from any sub-topic directly to the next Phase. If the candidate tries to skip ahead, say "Good enthusiasm! But we still need to cover [remaining sub-topics] first."
+- At the END of each complete phase, give a brief summary: "Phase 3 complete! You covered: [list sub-topics]. Ready for Phase 4?"
+- Do NOT move to Phase 2 until Phase 1 is solid. Do NOT move to Phase 3 until Phase 2 is solid. And so on.
+
+TEACHING APPROACH:
 - Present one concept at a time
-- Ask a checking question after each concept  
-- If they get it right, briefly confirm why and move on
-- If they get it wrong, explain the rule clearly, give an example, then ask again a slightly different way
-- Use concrete skating scenarios (name a skater, describe a specific spin/jump)
-- Reference phase numbers and citation codes when relevant
-- Don't move to Phase 2 until Phase 1 is solid
-Keep responses under 200 words unless explaining a complex concept.`;
+- Ask a checking question after each concept
+- If they get it right, confirm why and advance to the NEXT sub-topic (not the next phase)
+- If they get it wrong, explain the rule, give a concrete example, then re-ask differently
+- Use concrete skating scenarios with notation when helpful (e.g. "A skater performs CCoSp with 5 revs on foot 1, 2 revs on foot 2...")
+- Reference phase numbers, sub-topic letters, and citation codes
+- NEVER give a blank or vague response. NEVER say just "think through the framework." Always give them something concrete to react to.
+- Every response must end with either a checking question OR a clear statement of what comes next.
+Keep responses under 250 words unless explaining a complex concept.`;
 
   const aiState = { candidateName: name, apiKey: appSettings?.apiKey, onUsageUpdate: (u) => setAppSettings?.(p => ({ ...p, usage: u })) };
 
