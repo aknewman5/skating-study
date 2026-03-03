@@ -78,7 +78,9 @@ Code building examples:
 - FCCoSp = flying entry + change of foot + combination spin
 
 Key Phase 2 rules:
-- The LANDING position after a flying entry determines the spin name (not the air position)
+- The spin is assessed based on what the skater executes AFTER the flying entry (not the air position)
+- For flying spins in one position (no change of foot): the LANDING position determines the name (e.g. FCSp = landed in camel)
+- For flying combination or flying change-of-foot spins: the full execution after the fly determines the code (e.g. FCCoSp = flying entry, then change of foot + combination)
 - Layback, Biellmann, and similar variations are classified as UPRIGHT spins despite their appearance
 - The "final windup" (concluding upright at the end) is NOT considered a separate position as long as no additional feature is executed during it
 - If a feature IS executed in the final windup (edge change, DV, etc.), it becomes a combination spin
@@ -113,8 +115,10 @@ PHASE 3D — Flying Spin Requirements:
 - Must have a clear visible jump (flying entry)
 - Step-over instead of true flying entry → "V" flag (reduced base value) and judges reduce GOE
 - No previous rotation on the ice before take-off is permitted
-- The name of the flying spin corresponds to its LANDING position (not the air position)
-- The flying air position MAY be different from the landing position
+- The spin is assessed based on what the skater executes AFTER the flying entry (not the air position)
+- The flying air position MAY be different from what the skater does after landing
+- For flying spins in ONE position with NO change of foot (FCSp, FSSp, FUSp, FLSp): the LANDING position names the spin
+- For flying spins WITH a change of foot or combination (FCCoSp, FCoSp, etc.): assessed on full execution after the fly
 - SP: Required 8 revolutions in the landing position (lack reflected by judges in GOE)
 - The required revolutions can be in any variation of the landing position
 
@@ -816,7 +820,7 @@ const TPH_INDEX = [
     { code: "§SPIN.LAYBACK", title: "Layback & Sideways Leaning", page: "28–29", summary: "Head/shoulders back with arch, sideways variation, free leg optional" },
     { code: "§SPIN.COF", title: "Change of Foot Rules", page: "29", summary: "3 revolutions before/after, NV in SP if failed, V in FS, two-spins criteria" },
     { code: "§SPIN.COMBO", title: "Spin Combination Definition", page: "30", summary: "Min 2 basic positions with 2 revolutions each, non-basic ≠ position change" },
-    { code: "§SPIN.FLYING", title: "Flying Spin Rules", page: "31", summary: "Landing position names the spin, no prior rotation, step-over = V, 8 revs minimum" },
+    { code: "§SPIN.FLYING", title: "Flying Spin Rules", page: "31", summary: "Assessed on execution after the fly, one-position flying spins named by landing position, no prior rotation, step-over = V, 8 revs minimum" },
     { code: "§SPIN.SP", title: "Short Program Spin Requirements", page: "32–34", summary: "Flying spin, spin in one position, combination — SP-specific rules by level" },
     { code: "§SPIN.LSP", title: "Layback Spin (Ladies SP)", page: "33", summary: "8 revs required before Biellmann, backwards-sideways feature, additional features" },
     { code: "§SPIN.FS", title: "Free Skate Spin Requirements", page: "34–35", summary: "3 spins max: combo + flying + one position, 6/6/10 rev minimums, abbreviation matching" },
