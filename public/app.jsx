@@ -1822,6 +1822,9 @@ export default function App() {
       if (meta.flashcard) {
         next[cat].flashcardsSeen = (next[cat].flashcardsSeen || 0) + 1;
       }
+      if (meta.learnState !== undefined) {
+        next[cat].learnState = meta.learnState;
+      }
       saveProgress(next, candidateName);
       return next;
     });
@@ -2307,7 +2310,7 @@ function ModeScreen({ category, mode, name, progress, updateProgress, onBack, ap
       </div>
 
       <div style={{ maxWidth: "800px", margin: "0 auto", padding: "1.5rem" }}>
-        {mode === "learn"     && <LearnMode     category={category} cat={cat} name={name} updateProgress={updateProgress} appSettings={appSettings} setAppSettings={setAppSettings} />}
+        {mode === "learn"     && <LearnMode     category={category} cat={cat} name={name} progress={progress} updateProgress={updateProgress} appSettings={appSettings} setAppSettings={setAppSettings} />}
         {mode === "quiz"      && <QuizMode      category={category} cat={cat} name={name} updateProgress={updateProgress} appSettings={appSettings} setAppSettings={setAppSettings} />}
         {mode === "flashcard" && <FlashcardMode category={category} cat={cat} updateProgress={updateProgress} />}
         {mode === "reference" && <ReferenceMode category={category} cat={cat} name={name} appSettings={appSettings} setAppSettings={setAppSettings} />}
@@ -2317,19 +2320,27 @@ function ModeScreen({ category, mode, name, progress, updateProgress, onBack, ap
 }
 
 // ─── LEARN MODE ───────────────────────────────────────────────────────────────
-function LearnMode({ category, cat, name, updateProgress, appSettings, setAppSettings }) {
-  const [messages, setMessages] = useState([]);
+function LearnMode({ category, cat, name, progress, updateProgress, appSettings, setAppSettings }) {
+  const saved = progress[category]?.learnState;
+  const [messages, setMessages] = useState(saved?.messages || []);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
-  const [started, setStarted] = useState(false);
+  const [started, setStarted] = useState(!!(saved?.messages?.length));
   const [feedbackTarget, setFeedbackTarget] = useState(null);
-  const [topicCount, setTopicCount] = useState(0);
+  const [topicCount, setTopicCount] = useState(saved?.topicCount || 0);
   const bottomRef = useRef(null);
 
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
 
+  // Save conversation to progress whenever messages change
+  const saveLearnState = (msgs, tc) => {
+    if (updateProgress) {
+      updateProgress(category, null, { learnState: { messages: msgs.slice(-20), topicCount: tc } });
+    }
+  };
+
   const systemExtra = `You are in LEARN MODE for: ${cat.label.toUpperCase()}.
-The candidate's name is ${name}. 
+The candidate's name is ${name}.
 Your job: Guide them through the ${cat.label} framework step by step, phase by phase, sub-topic by sub-topic.
 
 MANDATORY COVERAGE RULES — CRITICAL, DO NOT SKIP:
@@ -2360,8 +2371,17 @@ Keep responses under 250 words unless explaining a complex concept.`;
       role: "user",
       content: `Start a guided lesson on ${cat.label}. My name is ${name}. Begin at the very beginning — Phase 1 basics. Give me the first concept and a simple checking question.`
     }], systemExtra, aiState);
-    setMessages([{ role: "assistant", content: intro }]);
+    const newMessages = [{ role: "assistant", content: intro }];
+    setMessages(newMessages);
+    saveLearnState(newMessages, 0);
     setLoading(false);
+  };
+
+  const startOver = () => {
+    setMessages([]);
+    setStarted(false);
+    setTopicCount(0);
+    saveLearnState([], 0);
   };
 
   const sendMessage = async () => {
@@ -2371,16 +2391,20 @@ Keep responses under 250 words unless explaining a complex concept.`;
     const newMessages = [...messages, { role: "user", content: userMsg }];
     setMessages(newMessages);
     setLoading(true);
-    
+
     // Auto-detect disputes
     if (isDispute(userMsg)) {
       submitDispute({ username: name, category, mode: "learn", triggerMessage: userMsg,
         conversation: newMessages.slice(-4).map(m => `${m.role}: ${m.content.slice(0, 200)}`).join("\n") });
     }
-    
+
     const reply = await callClaude(newMessages, systemExtra, aiState);
-    setMessages([...newMessages, { role: "assistant", content: reply }]);
-    setTopicCount(c => c + 1);
+    const updatedMessages = [...newMessages, { role: "assistant", content: reply }];
+    setMessages(updatedMessages);
+    const newTopicCount = topicCount + 1;
+    setTopicCount(newTopicCount);
+    // Save conversation state
+    saveLearnState(updatedMessages, newTopicCount);
     // Track learn progress: every 2 exchanges ≈ 1 topic covered
     if (topicCount % 2 === 0 && updateProgress) {
       updateProgress(category, null, { learnTopic: `${cat.label}_exchange_${topicCount}` });
@@ -2396,7 +2420,7 @@ Keep responses under 250 words unless explaining a complex concept.`;
           {cat.label} — Guided Learning
         </h2>
         <p style={{ color: "#6B8CAE", marginBottom: "2rem", maxWidth: "400px", margin: "0 auto 2rem", lineHeight: 1.7 }}>
-          Your instructor will walk you through the {cat.label.toLowerCase()} framework phase by phase, 
+          Your instructor will walk you through the {cat.label.toLowerCase()} framework phase by phase,
           checking your understanding at each step.
         </p>
         <button onClick={startLesson} style={{
@@ -2410,9 +2434,16 @@ Keep responses under 250 words unless explaining a complex concept.`;
 
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "calc(100vh - 100px)" }}>
+      <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: "0.5rem" }}>
+        <button onClick={startOver} style={{
+          background: "none", border: "1px solid rgba(255,255,255,0.15)", color: "#6B8CAE",
+          padding: "0.25rem 0.75rem", borderRadius: "6px", cursor: "pointer",
+          fontSize: "0.75rem", fontFamily: "inherit",
+        }}>Start Over</button>
+      </div>
       <div style={{ flex: 1, overflowY: "auto", paddingBottom: "1rem" }}>
         {messages.map((msg, i) => (
-          <ChatBubble key={i} role={msg.role} content={msg.content} color={cat.color} 
+          <ChatBubble key={i} role={msg.role} content={msg.content} color={cat.color}
             onReport={msg.role === "assistant" ? (resp) => setFeedbackTarget(resp) : undefined} />
         ))}
         {loading && <ChatBubble role="assistant" content="..." color={cat.color} loading />}
