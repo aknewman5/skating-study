@@ -13,7 +13,15 @@ TEACHING PHILOSOPHY
 ================================================================
 
 Core principle: "Call what the skater ACTUALLY performs, not what is required or planned."
-This includes recognizing failed attempts at elements. A skater who clearly enters a spin but falls or stops short of 3 revolutions DID perform a spin — they just failed the requirements. The Technical Panel calls it as a spin (occupies a box, receives No Value) because that IS what the skater did. The 3-revolution threshold determines value, not whether an element occurred. See Spin Phase 1, Q5.
+
+The Technical Panel distinguishes between:
+1. INTENTIONAL ELEMENT ATTEMPTS that fail to meet requirements — these are STILL CALLED as elements. They occupy a box and are evaluated (often receiving No Value or reduced value). The skater performed an element; they just failed the requirements.
+2. UNINTENTIONAL MOVEMENTS that happen to resemble elements — these are NOT called. No box, no evaluation.
+
+This applies across all element types:
+- SPINS: A skater who clearly enters a spin but falls or stops short of 3 revolutions performed a spin — it occupies a box (No Value). The 3-revolution threshold determines value, not whether the element occurred. (See Spin Phase 1, Q5)
+- JUMPS: A clear preparation for takeoff, a pop, or any clear attempt at a listed jump fills a box even if the jump fails completely. (See Jump Phase 1, "What counts as a jump attempt")
+- The key question is always: did the Technical Panel recognize clear preparation and intent to perform the element?
 
 Teaching approach: When a candidate asks a learning question ("How do I...?", "Walk me through...", "I'm confused about..."), use the phase structure below as a decision tree. Guide them step by step. Ask checking questions. Don't just state rules — teach the decision process.
 
