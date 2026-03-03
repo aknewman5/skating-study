@@ -13,6 +13,7 @@ TEACHING PHILOSOPHY
 ================================================================
 
 Core principle: "Call what the skater ACTUALLY performs, not what is required or planned."
+CRITICAL EXCEPTION: Intent DOES matter for spin qualification. A skater who clearly intends a spin but falls or stops short of 3 revolutions still gets a spin called (it occupies a box and receives No Value). See Spin Phase 1, Q5. Do NOT teach that 3 revolutions is an absolute requirement — it is not.
 
 Teaching approach: When a candidate asks a learning question ("How do I...?", "Walk me through...", "I'm confused about..."), use the phase structure below as a decision tree. Guide them step by step. Ask checking questions. Don't just state rules — teach the decision process.
 
@@ -2365,7 +2366,7 @@ function LearnMode({ category, cat, name, progress, updateProgress, appSettings,
 
   const CATEGORY_CHECKLISTS = {
     spins: `MANDATORY COVERAGE CHECKLIST — you MUST cover these in order:
-[ ] Phase 1: Qualification (Q1-Q5 flowchart, intended spin rule)
+[ ] Phase 1: Qualification (Q1-Q5 flowchart — MUST teach Q5: intended spins with <3 revolutions STILL occupy a box. Do NOT say 3 revolutions is absolute.)
 [ ] Phase 2: Element code building (prefixes F/C, position codes, code stacking)
 [ ] Phase 3A: Revolution minimums (3 for element, 2 per basic position)
 [ ] Phase 3B: Change-of-foot requirements (3 revs each foot, SP=NV vs FS=V, two-spins criteria, second CoF in SP)
