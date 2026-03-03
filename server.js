@@ -574,7 +574,7 @@ app.post("/api/chat", async (req, res) => {
     const response = await client.messages.create({
       model: CONFIG.MODEL,
       max_tokens: 4096,
-      system: systemPrompt,
+      system: [{ type: "text", text: systemPrompt, cache_control: { type: "ephemeral" } }],
       messages: chatMessages,
     });
 
