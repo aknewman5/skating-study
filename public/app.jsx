@@ -2631,12 +2631,10 @@ ${correct ? "Candidate got this right. Give a brief confirmation (1-2 sentences)
             width: "100%", padding: "0.75rem", background: cat.color, border: "none",
             borderRadius: "8px", color: "#FFFFFF", cursor: "pointer", fontFamily: "inherit", fontSize: "0.95rem",
           }}>{qIndex + 1 >= shuffled.length ? "See Results" : "Next Question →"}</button>
-          <button onClick={() => setFeedbackTarget(
-            "Question: " + q.question + "
-Correct: " + q.correct.join(", ") + "
-Selected: " + selected.join(", ") + (aiExplanation ? "
-AI Explanation: " + aiExplanation : "")
-          )} style={{
+          <button onClick={() => {
+            const detail = "Question: " + q.question + " | Correct: " + q.correct.join(", ") + " | Selected: " + selected.join(", ") + (aiExplanation ? " | AI Explanation: " + aiExplanation : "");
+            setFeedbackTarget(detail);
+          }} style={{
             padding: "0.5rem 0.75rem", background: "none", border: "1px solid rgba(255,255,255,0.12)",
             borderRadius: "8px", color: "#6B8CAE", cursor: "pointer", fontFamily: "inherit", fontSize: "0.8rem", marginTop: "0.5rem",
           }}>⚑ Report issue with this question</button>
