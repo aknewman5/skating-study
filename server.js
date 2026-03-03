@@ -450,32 +450,49 @@ const MAX_HISTORY_MESSAGES = 20;
 
 app.post("/api/chat", async (req, res) => {
   try {
-    const { message, username } = req.body;
-    if (!message) return res.status(400).json({ error: "Message required" });
+    const { message, messages, username, system } = req.body;
 
+    // Support both single message (legacy) and messages array (current frontend)
     const key = username || "anonymous";
-    if (!conversationHistory[key]) conversationHistory[key] = [];
-    conversationHistory[key].push({ role: "user", content: message });
-    if (conversationHistory[key].length > MAX_HISTORY_MESSAGES) {
-      conversationHistory[key] = conversationHistory[key].slice(-MAX_HISTORY_MESSAGES);
+    let chatMessages;
+
+    if (messages && Array.isArray(messages)) {
+      // Frontend sends full conversation — use it directly
+      chatMessages = messages.slice(-MAX_HISTORY_MESSAGES);
+    } else if (message) {
+      // Legacy single-message format — manage history server-side
+      if (!conversationHistory[key]) conversationHistory[key] = [];
+      conversationHistory[key].push({ role: "user", content: message });
+      if (conversationHistory[key].length > MAX_HISTORY_MESSAGES) {
+        conversationHistory[key] = conversationHistory[key].slice(-MAX_HISTORY_MESSAGES);
+      }
+      chatMessages = conversationHistory[key];
+    } else {
+      return res.status(400).json({ error: "Message required" });
     }
 
     if (!CONFIG.ANTHROPIC_API_KEY) {
-      return res.json({ response: "API key not configured. Set ANTHROPIC_API_KEY in environment." });
+      return res.json({ content: [{ text: "API key not configured. Set ANTHROPIC_API_KEY in environment." }] });
     }
 
     const client = new Anthropic({ apiKey: CONFIG.ANTHROPIC_API_KEY });
+    const systemPrompt = system || "You are a figure skating technical panel study assistant.";
     const response = await client.messages.create({
       model: CONFIG.MODEL,
       max_tokens: 4096,
-      system: "You are a figure skating technical panel study assistant.",
-      messages: conversationHistory[key],
+      system: systemPrompt,
+      messages: chatMessages,
     });
 
     const text = response.content?.[0]?.text || "No response.";
-    conversationHistory[key].push({ role: "assistant", content: text });
 
-    res.json({ response: text });
+    // Store in server history for legacy callers
+    if (message && !messages) {
+      conversationHistory[key].push({ role: "assistant", content: text });
+    }
+
+    // Return in Anthropic-compatible format so the frontend can read data.content[0].text
+    res.json({ content: [{ text }] });
   } catch (e) {
     console.error("Chat error:", e);
     res.status(500).json({ error: "Chat failed" });
