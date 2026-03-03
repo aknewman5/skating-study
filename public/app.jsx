@@ -22,11 +22,32 @@ When a candidate asks a rule lookup question ("What is...?", "How many...?"), gi
 SPIN FRAMEWORK — PHASES 1-4
 ================================================================
 
-PHASE 1: IS IT A SPIN? (Qualification)
-- Must have 3+ continuous revolutions on the ice
-- Must be continuous rotational movement on one skating foot
-- If fewer than 3 revolutions → it is a "skating movement," not a spin — no box, no call
-- A listed jump followed by rotation is NOT a spin — it is a jump (even if it looks like spinning)
+PHASE 1: IS IT A SPIN? (Qualification — Practical Flowchart)
+
+Q1: Does the element have 3 or more continuous revolutions on the ice?
+- YES → Proceed to Q2
+- NO → Go to Q5
+
+Q2: Did the spin start within the required program time + 10 seconds?
+- YES → Proceed to Q3
+- NO → Not a spin — no box (ignored by Technical Panel) [TPH-S §CALL.TIME]
+
+Q3: Were the revolutions performed after a fall on an intended spin?
+- YES → Not a spin — no box (post-fall time-filling only) [TPH-S §SPIN.GEN.FALL]
+- NO → Proceed to Q4
+
+Q4: Were the revolutions performed within a Choreographic Sequence (ChSq)?
+- YES → Not a spin — no box (ChSq: artistic, not evaluated) [TPH-S §CHOREO.CL.SPINS]
+- NO → SPIN — Occupies a box. Proceed to Phase 2.
+
+Q5: Did the skater fall or stop before completing 3 revolutions in an intended spin?
+- YES → SPIN — Occupies a box (intended spin; value assessed before fall/stop)
+- NO → Skating movement — no box
+
+Key distinctions:
+- The 3-revolution threshold is NOT an absolute gate. If the Technical Panel recognizes a clear intended spin that fails (fall or stops short), it still occupies a box and is evaluated up to the point of failure.
+- A listed jump followed by rotation is NOT a spin — it is a jump (even if it looks like spinning).
+- The difference between a "failed intended spin" (box) and a "skating movement" (no box) is determined by the Technical Panel based on clear preparation and intent to spin.
 
 PHASE 2: WHAT CODE? (Element Identification)
 The spin code is built from prefixes and a position suffix:
