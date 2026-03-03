@@ -8,13 +8,63 @@
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { background: #0A1628; overflow-x: hidden; }
     #root { min-height: 100vh; }
+    #loading-screen {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Georgia', serif;
+      color: #FFFFFF;
+    }
+    #loading-screen .logo {
+      width: 72px; height: 72px;
+      background: linear-gradient(135deg, #0D7377, #1A2A4A);
+      border-radius: 16px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 32px;
+      box-shadow: 0 0 40px rgba(13,115,119,0.4);
+      margin-bottom: 1.5rem;
+      animation: pulse 2s ease-in-out infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { box-shadow: 0 0 20px rgba(13,115,119,0.3); }
+      50% { box-shadow: 0 0 50px rgba(13,115,119,0.6); }
+    }
+    #loading-screen .org {
+      font-size: 11px; letter-spacing: 4px; color: #A8D8EA;
+      text-transform: uppercase; margin-bottom: 0.5rem;
+    }
+    #loading-screen .title {
+      font-size: 1.3rem; font-weight: normal; margin-bottom: 1.5rem;
+      color: #FFFFFF; text-align: center; padding: 0 2rem;
+    }
+    #loading-screen .status {
+      color: #6B8CAE; font-size: 0.85rem;
+    }
+    #loading-screen .dots::after {
+      content: ''; animation: dots 1.5s steps(4, end) infinite;
+    }
+    @keyframes dots {
+      0% { content: ''; }
+      25% { content: '.'; }
+      50% { content: '..'; }
+      75% { content: '...'; }
+    }
   </style>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"></script>
 </head>
 <body>
-  <div id="root"></div>
+  <div id="root">
+    <div id="loading-screen">
+      <div class="logo">◉</div>
+      <div class="org">U.S. Figure Skating</div>
+      <div class="title">2026 National Technical Panel Seminar<br>Singles Study Assistant</div>
+      <div class="status">Loading<span class="dots"></span></div>
+    </div>
+  </div>
   <script>
     fetch('/app.jsx')
       .then(function(r) {
@@ -46,7 +96,8 @@
           '<div style="color:#F0A0A0;padding:2rem;font-family:Georgia,serif;text-align:center;margin-top:4rem;">' +
           '<div style="font-size:2rem;margin-bottom:1rem;">⚠</div>' +
           '<h2 style="font-weight:normal;margin-bottom:0.5rem;">Failed to load application</h2>' +
-          '<p style="color:#6B8CAE;font-size:0.9rem;">' + err.message + '</p></div>';
+          '<p style="color:#6B8CAE;font-size:0.9rem;">' + err.message + '</p>' +
+          '<p style="color:#4A6080;font-size:0.8rem;margin-top:1rem;">Try refreshing the page</p></div>';
       });
   </script>
 </body>
