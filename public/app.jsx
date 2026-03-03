@@ -2361,67 +2361,81 @@ function LearnMode({ category, cat, name, progress, updateProgress, appSettings,
   const [started, setStarted] = useState(!!(saved?.messages?.length));
   const [feedbackTarget, setFeedbackTarget] = useState(null);
   const [topicCount, setTopicCount] = useState(saved?.topicCount || 0);
+  const [startIdx, setStartIdx] = useState(saved?.startIdx || 0);
   const bottomRef = useRef(null);
 
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
 
   // Save conversation to progress whenever messages change
-  const saveLearnState = (msgs, tc) => {
+  const saveLearnState = (msgs, tc, si) => {
     if (updateProgress) {
-      updateProgress(category, null, { learnState: { messages: msgs.slice(-20), topicCount: tc } });
+      updateProgress(category, null, { learnState: { messages: msgs.slice(-20), topicCount: tc, startIdx: si !== undefined ? si : startIdx } });
     }
   };
 
-  const CATEGORY_CHECKLISTS = {
-    spins: `MANDATORY COVERAGE CHECKLIST — you MUST cover these in order:
-[ ] Phase 1: Qualification (Q1-Q5 flowchart — MUST teach Q5: intended spins with <3 revolutions STILL occupy a box. Do NOT say 3 revolutions is absolute.)
-[ ] Phase 2: Element code building (prefixes F/C, position codes, code stacking)
-[ ] Phase 3A: Revolution minimums (3 for element, 2 per basic position)
-[ ] Phase 3B: Change-of-foot requirements (3 revs each foot, SP=NV vs FS=V, two-spins criteria, second CoF in SP)
-[ ] Phase 3C: Combination spin requirements (CoSp min 2 basic positions, 3 for full value)
-[ ] Phase 3D: Flying spin requirements (visible jump, step-over=V, landing position names spin)
-[ ] Phase 3E: V flag summary (4 scenarios) and No Value summary (all NV conditions)
-[ ] Phase 4: Level features (Features 1-14, gateway/DV rule, mandatory features for L4, 2-per-foot quota)`,
-    jumps: `MANDATORY COVERAGE CHECKLIST — you MUST cover these in order:
-[ ] Phase 1: Listed jumps (7 jumps, edge vs toe), box rules (what fills a box, what doesn't)
-[ ] Phase 2: Written codes (solo, combo, sequence, Euler, +COMBO, +SEQ, +REP)
-[ ] Phase 3A: Edge calls (Flip inside vs Lutz outside, e vs ! marks)
-[ ] Phase 3B: Rotation calls (q quarter, < under-rotated, << downgraded, cheated takeoffs)
-[ ] Phase 3C: Popped jumps and attempt rules
-[ ] Phase 4A: SP jump rules (wrong element, no value, extra jumps, missing combos)
-[ ] Phase 4B: FS repetition rules (first rep doubles, triple/quad +REP 70%, second rep NV)
-[ ] Phase 4C: FS combo/sequence rules (max 3, 4th combo +REP, fall/step-out rules)
-[ ] Phase 4D: Bonus rules by level`,
-    steps: `MANDATORY COVERAGE CHECKLIST — you MUST cover these in order:
-[ ] What is a StSq (definition, pattern, required element)
-[ ] Feature 1: Variety of turns/steps (ceiling concept, 5+ difficult turns for L1+)
-[ ] Feature 2: Rotation in both directions (turns, body rotation recognition)
-[ ] Feature 3: Full body movements (at least 2, upper body involvement)
-[ ] Feature 4: Simple and varied use of both feet (right foot, left foot distribution)
-[ ] Level determination (how features combine to set level, Base through L4)
-[ ] Calling procedure (TS1/TS2/TC verbalization sequence)`,
-    choreo: `MANDATORY COVERAGE CHECKLIST — you MUST cover these in order:
-[ ] What is a ChSq (definition, which levels require it, 2+ skating movements)
-[ ] Valid skating movements (spirals, arabesques, spread eagles, Ina Bauers, hydroblading)
-[ ] Confirmation rules (when is it confirmed, what happens if not confirmed)
-[ ] Jumps in ChSq (listed singles/doubles not called, do not occupy a box)
-[ ] Spins in ChSq (not evaluated as spin elements)
-[ ] Fall rules (fall after confirmation still gets fall tag)
-[ ] ChSq timing (element ends at next element prep or end of program)`,
-    general: `MANDATORY COVERAGE CHECKLIST — you MUST cover these in order:
-[ ] Core principle: call what skater ACTUALLY performs
-[ ] Calling procedure (verbal calling sequence, TS1/TS2/TC roles)
-[ ] Falls framework (definition, 2-question decision tree, deduction amounts by level)
-[ ] Wrong element rules (asterisk placement, when elements receive no value)
-[ ] Time limits and program structure
-[ ] Review process (when available, slow motion rules, majority vote)`
+  const PHASE_TOPICS = {
+    spins: [
+      { id: "phase1", label: "Phase 1: Qualification", detail: "Q1-Q5 flowchart, intended spin rule", prompt: "Phase 1 — Is It A Spin? (Qualification flowchart Q1-Q5)" },
+      { id: "phase2", label: "Phase 2: Element Codes", detail: "Prefixes F/C, position codes, code stacking", prompt: "Phase 2 — What Code? (element code building)" },
+      { id: "phase3a", label: "Phase 3A: Revolution Minimums", detail: "3 for element, 2 per basic position", prompt: "Phase 3A — Revolution minimums" },
+      { id: "phase3b", label: "Phase 3B: Change-of-Foot", detail: "3 revs each foot, SP=NV vs FS=V, two-spins criteria", prompt: "Phase 3B — Change-of-foot requirements" },
+      { id: "phase3c", label: "Phase 3C: Combination Spins", detail: "CoSp min 2 basic positions, 3 for full value", prompt: "Phase 3C — Combination spin requirements (CoSp)" },
+      { id: "phase3d", label: "Phase 3D: Flying Spins", detail: "Visible jump, step-over=V, landing position", prompt: "Phase 3D — Flying spin requirements" },
+      { id: "phase3e", label: "Phase 3E: V Flag & No Value", detail: "4 V scenarios, all NV conditions", prompt: "Phase 3E — V flag summary and No Value summary" },
+      { id: "phase4", label: "Phase 4: Level Features", detail: "Features 1-14, gateway/DV rule, mandatory features", prompt: "Phase 4 — What Level? (Features 1-14, gateway rule, mandatory features)" },
+    ],
+    jumps: [
+      { id: "phase1", label: "Phase 1: Listed Jumps & Boxes", detail: "7 jumps, edge vs toe, what fills a box", prompt: "Phase 1 — Is It A Listed Jump? Does It Fill A Box?" },
+      { id: "phase2", label: "Phase 2: Written Codes", detail: "Solo, combo, sequence, Euler, +COMBO, +SEQ, +REP", prompt: "Phase 2 — What Code Goes In The Box?" },
+      { id: "phase3a", label: "Phase 3A: Edge Calls", detail: "Flip inside vs Lutz outside, e vs ! marks", prompt: "Phase 3A — Edge calls (Flip/Lutz)" },
+      { id: "phase3b", label: "Phase 3B: Rotation Calls", detail: "q, <, <<, cheated takeoffs", prompt: "Phase 3B — Rotation calls" },
+      { id: "phase3c", label: "Phase 3C: Popped Jumps & Attempts", detail: "Popped jumps, attempt rules", prompt: "Phase 3C — Popped jumps and attempt rules" },
+      { id: "phase4a", label: "Phase 4A: SP Jump Rules", detail: "Wrong element, no value, extra jumps", prompt: "Phase 4A — Short Program jump rules" },
+      { id: "phase4b", label: "Phase 4B: FS Repetition Rules", detail: "First rep, +REP 70%, second rep NV", prompt: "Phase 4B — Free Skate repetition rules" },
+      { id: "phase4c", label: "Phase 4C: FS Combo/Sequence", detail: "Max 3, 4th combo +REP, fall/step-out", prompt: "Phase 4C — Free Skate combo/sequence rules" },
+      { id: "phase4d", label: "Phase 4D: Bonus Rules", detail: "Bonus rules by level", prompt: "Phase 4D — Bonus rules by level" },
+    ],
+    steps: [
+      { id: "def", label: "Step Sequence Definition", detail: "What is a StSq, pattern, required element", prompt: "What is a Step Sequence (StSq) — definition and requirements" },
+      { id: "f1", label: "Feature 1: Variety of Turns", detail: "Ceiling concept, 5+ difficult turns for L1+", prompt: "Feature 1 — Variety of turns and steps (ceiling concept)" },
+      { id: "f2", label: "Feature 2: Both Directions", detail: "Turns, body rotation recognition", prompt: "Feature 2 — Rotation in both directions" },
+      { id: "f3", label: "Feature 3: Full Body Movements", detail: "At least 2, upper body involvement", prompt: "Feature 3 — Full body movements" },
+      { id: "f4", label: "Feature 4: Use of Both Feet", detail: "Right foot, left foot distribution", prompt: "Feature 4 — Simple and varied use of both feet" },
+      { id: "levels", label: "Level Determination", detail: "How features combine, Base through L4", prompt: "Level determination — how features combine to set the level" },
+      { id: "calling", label: "Calling Procedure", detail: "TS1/TS2/TC verbalization sequence", prompt: "Calling procedure — TS1/TS2/TC verbalization sequence" },
+    ],
+    choreo: [
+      { id: "def", label: "What is a ChSq", detail: "Definition, which levels require it", prompt: "What is a Choreographic Sequence — definition and requirements" },
+      { id: "movements", label: "Valid Skating Movements", detail: "Spirals, arabesques, spread eagles, etc.", prompt: "Valid skating movements in ChSq" },
+      { id: "confirm", label: "Confirmation Rules", detail: "When confirmed, what if not confirmed", prompt: "Confirmation rules — when is a ChSq confirmed?" },
+      { id: "jumps", label: "Jumps in ChSq", detail: "Listed singles/doubles not called, no box", prompt: "Jumps in ChSq — how listed jumps are handled" },
+      { id: "spins", label: "Spins in ChSq", detail: "Not evaluated as spin elements", prompt: "Spins in ChSq — not evaluated as spin elements" },
+      { id: "falls", label: "Fall Rules", detail: "Fall after confirmation gets fall tag", prompt: "Fall rules in ChSq" },
+      { id: "timing", label: "ChSq Timing", detail: "When element ends", prompt: "ChSq timing — when the element starts and ends" },
+    ],
+    general: [
+      { id: "core", label: "Core Principle", detail: "Call what skater ACTUALLY performs", prompt: "Core principle — call what the skater actually performs" },
+      { id: "calling", label: "Calling Procedure", detail: "Verbal calling sequence, TS1/TS2/TC roles", prompt: "Calling procedure — verbal calling sequence and panel roles" },
+      { id: "falls", label: "Falls Framework", detail: "Definition, 2-question decision tree, deductions", prompt: "Falls framework — definition, decision tree, deduction amounts" },
+      { id: "wrong", label: "Wrong Element Rules", detail: "Asterisk placement, no value conditions", prompt: "Wrong element rules — asterisk placement and no value" },
+      { id: "time", label: "Time Limits & Program Structure", detail: "Program times by level", prompt: "Time limits and program structure" },
+      { id: "review", label: "Review Process", detail: "When available, slow motion, majority vote", prompt: "Review process — when available, slow motion rules, majority vote" },
+    ],
   };
 
-  const systemExtra = `You are in LEARN MODE for: ${cat.label.toUpperCase()}.
+  const topics = PHASE_TOPICS[category] || [];
+
+  const buildChecklist = (startIdx) => {
+    const items = topics.slice(startIdx);
+    return `MANDATORY COVERAGE CHECKLIST — you MUST cover these in order:\n` +
+      items.map(t => `[ ] ${t.label} (${t.detail})`).join("\n");
+  };
+
+  const buildSystemExtra = (startIdx = 0) => `You are in LEARN MODE for: ${cat.label.toUpperCase()}.
 The candidate's name is ${name}.
 Your job: Guide them through the ${cat.label} framework step by step, covering every topic in the checklist below.
 
-${CATEGORY_CHECKLISTS[category] || "Cover all phases and sub-topics in the framework for this category in order."}
+${buildChecklist(startIdx)}
 
 CRITICAL RULES — NEVER VIOLATE THESE:
 1. TRACK YOUR PROGRESS: At the start of each response, mentally check which topics you have covered and which remain. Never move to the next topic until the current one is solid.
@@ -2444,16 +2458,21 @@ Keep responses under 250 words unless explaining a complex concept.`;
 
   const aiState = { candidateName: name, apiKey: appSettings?.apiKey, onUsageUpdate: (u) => setAppSettings?.(p => ({ ...p, usage: u })) };
 
-  const startLesson = async () => {
+  const startLesson = async (phaseIdx = 0) => {
+    setStartIdx(phaseIdx);
     setStarted(true);
     setLoading(true);
+    const topic = topics[phaseIdx];
+    const promptText = phaseIdx === 0
+      ? `Start a guided lesson on ${cat.label}. My name is ${name}. Begin at the very beginning — Phase 1 basics. Give me the first concept and a simple checking question.`
+      : `Start a guided lesson on ${cat.label}. My name is ${name}. I want to jump ahead to: ${topic.prompt}. Assume I already understand the earlier phases. Begin teaching this topic and give me a checking question.`;
     const intro = await callClaude([{
       role: "user",
-      content: `Start a guided lesson on ${cat.label}. My name is ${name}. Begin at the very beginning — Phase 1 basics. Give me the first concept and a simple checking question.`
-    }], systemExtra, aiState);
+      content: promptText
+    }], buildSystemExtra(phaseIdx), aiState);
     const newMessages = [{ role: "assistant", content: intro }];
     setMessages(newMessages);
-    saveLearnState(newMessages, 0);
+    saveLearnState(newMessages, 0, phaseIdx);
     setLoading(false);
   };
 
@@ -2461,7 +2480,8 @@ Keep responses under 250 words unless explaining a complex concept.`;
     setMessages([]);
     setStarted(false);
     setTopicCount(0);
-    saveLearnState([], 0);
+    setStartIdx(0);
+    saveLearnState([], 0, 0);
   };
 
   const sendMessage = async () => {
@@ -2478,7 +2498,7 @@ Keep responses under 250 words unless explaining a complex concept.`;
         conversation: newMessages.slice(-4).map(m => `${m.role}: ${m.content.slice(0, 200)}`).join("\n") });
     }
 
-    const reply = await callClaude(newMessages, systemExtra, aiState);
+    const reply = await callClaude(newMessages, buildSystemExtra(startIdx), aiState);
     const updatedMessages = [...newMessages, { role: "assistant", content: reply }];
     setMessages(updatedMessages);
     const newTopicCount = topicCount + 1;
@@ -2494,20 +2514,49 @@ Keep responses under 250 words unless explaining a complex concept.`;
 
   if (!started) {
     return (
-      <div style={{ textAlign: "center", paddingTop: "3rem" }}>
-        <div style={{ fontSize: "3rem", marginBottom: "1rem" }}>{cat.icon}</div>
-        <h2 style={{ fontSize: "1.4rem", fontWeight: "normal", color: "#FFFFFF", marginBottom: "0.5rem" }}>
-          {cat.label} — Guided Learning
-        </h2>
-        <p style={{ color: "#6B8CAE", marginBottom: "2rem", maxWidth: "400px", margin: "0 auto 2rem", lineHeight: 1.7 }}>
-          Your instructor will walk you through the {cat.label.toLowerCase()} framework phase by phase,
-          checking your understanding at each step.
-        </p>
-        <button onClick={startLesson} style={{
-          padding: "0.75rem 2rem", background: cat.color, border: "none",
-          borderRadius: "8px", color: "#FFFFFF", fontSize: "1rem",
-          cursor: "pointer", fontFamily: "inherit", letterSpacing: "0.5px",
-        }}>Begin Lesson</button>
+      <div style={{ paddingTop: "2rem", maxWidth: "540px", margin: "0 auto" }}>
+        <div style={{ textAlign: "center", marginBottom: "1.5rem" }}>
+          <div style={{ fontSize: "3rem", marginBottom: "0.75rem" }}>{cat.icon}</div>
+          <h2 style={{ fontSize: "1.4rem", fontWeight: "normal", color: "#FFFFFF", marginBottom: "0.5rem" }}>
+            {cat.label} — Guided Learning
+          </h2>
+          <p style={{ color: "#6B8CAE", lineHeight: 1.6, fontSize: "0.9rem" }}>
+            Start from the beginning or jump to a specific section.
+          </p>
+        </div>
+        <button onClick={() => startLesson(0)} style={{
+          width: "100%", padding: "0.75rem 1rem", marginBottom: "1.25rem",
+          background: cat.color, border: "none", borderRadius: "8px",
+          color: "#FFFFFF", fontSize: "1rem", cursor: "pointer",
+          fontFamily: "inherit", letterSpacing: "0.5px",
+        }}>Start from Beginning</button>
+        <div style={{ color: "#6B8CAE", fontSize: "0.75rem", textTransform: "uppercase",
+          letterSpacing: "2px", marginBottom: "0.75rem" }}>Or jump to a section</div>
+        <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+          {topics.map((topic, idx) => (
+            <button key={topic.id} onClick={() => startLesson(idx)}
+              disabled={loading}
+              style={{
+                display: "flex", alignItems: "flex-start", gap: "0.75rem",
+                width: "100%", padding: "0.65rem 0.85rem",
+                background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)",
+                borderRadius: "8px", cursor: "pointer", fontFamily: "inherit",
+                textAlign: "left", transition: "background 0.15s, border-color 0.15s",
+              }}
+              onMouseEnter={e => { e.currentTarget.style.background = "rgba(255,255,255,0.08)"; e.currentTarget.style.borderColor = cat.color + "66"; }}
+              onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,255,255,0.04)"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)"; }}
+            >
+              <span style={{ color: cat.color, fontWeight: "bold", fontSize: "0.8rem",
+                minWidth: "1.5rem", paddingTop: "0.1rem" }}>{idx + 1}</span>
+              <div>
+                <div style={{ color: "#FFFFFF", fontSize: "0.9rem", marginBottom: "0.15rem" }}>{topic.label}</div>
+                <div style={{ color: "#6B8CAE", fontSize: "0.75rem" }}>{topic.detail}</div>
+              </div>
+            </button>
+          ))}
+        </div>
+        {loading && <div style={{ textAlign: "center", color: "#6B8CAE", marginTop: "1.5rem",
+          fontSize: "0.9rem" }}>Starting lesson...</div>}
       </div>
     );
   }
