@@ -2363,26 +2363,73 @@ function LearnMode({ category, cat, name, progress, updateProgress, appSettings,
     }
   };
 
+  const CATEGORY_CHECKLISTS = {
+    spins: `MANDATORY COVERAGE CHECKLIST — you MUST cover these in order:
+[ ] Phase 1: Qualification (Q1-Q5 flowchart, intended spin rule)
+[ ] Phase 2: Element code building (prefixes F/C, position codes, code stacking)
+[ ] Phase 3A: Revolution minimums (3 for element, 2 per basic position)
+[ ] Phase 3B: Change-of-foot requirements (3 revs each foot, SP=NV vs FS=V, two-spins criteria, second CoF in SP)
+[ ] Phase 3C: Combination spin requirements (CoSp min 2 basic positions, 3 for full value)
+[ ] Phase 3D: Flying spin requirements (visible jump, step-over=V, landing position names spin)
+[ ] Phase 3E: V flag summary (4 scenarios) and No Value summary (all NV conditions)
+[ ] Phase 4: Level features (Features 1-14, gateway/DV rule, mandatory features for L4, 2-per-foot quota)`,
+    jumps: `MANDATORY COVERAGE CHECKLIST — you MUST cover these in order:
+[ ] Phase 1: Listed jumps (7 jumps, edge vs toe), box rules (what fills a box, what doesn't)
+[ ] Phase 2: Written codes (solo, combo, sequence, Euler, +COMBO, +SEQ, +REP)
+[ ] Phase 3A: Edge calls (Flip inside vs Lutz outside, e vs ! marks)
+[ ] Phase 3B: Rotation calls (q quarter, < under-rotated, << downgraded, cheated takeoffs)
+[ ] Phase 3C: Popped jumps and attempt rules
+[ ] Phase 4A: SP jump rules (wrong element, no value, extra jumps, missing combos)
+[ ] Phase 4B: FS repetition rules (first rep doubles, triple/quad +REP 70%, second rep NV)
+[ ] Phase 4C: FS combo/sequence rules (max 3, 4th combo +REP, fall/step-out rules)
+[ ] Phase 4D: Bonus rules by level`,
+    steps: `MANDATORY COVERAGE CHECKLIST — you MUST cover these in order:
+[ ] What is a StSq (definition, pattern, required element)
+[ ] Feature 1: Variety of turns/steps (ceiling concept, 5+ difficult turns for L1+)
+[ ] Feature 2: Rotation in both directions (turns, body rotation recognition)
+[ ] Feature 3: Full body movements (at least 2, upper body involvement)
+[ ] Feature 4: Simple and varied use of both feet (right foot, left foot distribution)
+[ ] Level determination (how features combine to set level, Base through L4)
+[ ] Calling procedure (TS1/TS2/TC verbalization sequence)`,
+    choreo: `MANDATORY COVERAGE CHECKLIST — you MUST cover these in order:
+[ ] What is a ChSq (definition, which levels require it, 2+ skating movements)
+[ ] Valid skating movements (spirals, arabesques, spread eagles, Ina Bauers, hydroblading)
+[ ] Confirmation rules (when is it confirmed, what happens if not confirmed)
+[ ] Jumps in ChSq (listed singles/doubles not called, do not occupy a box)
+[ ] Spins in ChSq (not evaluated as spin elements)
+[ ] Fall rules (fall after confirmation still gets fall tag)
+[ ] ChSq timing (element ends at next element prep or end of program)`,
+    general: `MANDATORY COVERAGE CHECKLIST — you MUST cover these in order:
+[ ] Core principle: call what skater ACTUALLY performs
+[ ] Calling procedure (verbal calling sequence, TS1/TS2/TC roles)
+[ ] Falls framework (definition, 2-question decision tree, deduction amounts by level)
+[ ] Wrong element rules (asterisk placement, when elements receive no value)
+[ ] Time limits and program structure
+[ ] Review process (when available, slow motion rules, majority vote)`
+  };
+
   const systemExtra = `You are in LEARN MODE for: ${cat.label.toUpperCase()}.
 The candidate's name is ${name}.
-Your job: Guide them through the ${cat.label} framework step by step, phase by phase, sub-topic by sub-topic.
+Your job: Guide them through the ${cat.label} framework step by step, covering every topic in the checklist below.
 
-MANDATORY COVERAGE RULES — CRITICAL, DO NOT SKIP:
-- You MUST cover EVERY sub-topic within a phase before moving to the next phase.
-- For spins, Phase 3 has five sub-topics you MUST cover in order: 3A (revolution minimums), 3B (change-of-foot requirements including SP vs FS differences), 3C (CoSp position requirements), 3D (flying spin requirements), 3E (V flag and No Value summary).
-- When you finish a sub-topic, explicitly name the next one: "Now let's move to Phase 3B — change-of-foot requirements."
-- Do NOT jump from any sub-topic directly to the next Phase. If the candidate tries to skip ahead, say "Good enthusiasm! But we still need to cover [remaining sub-topics] first."
-- At the END of each complete phase, give a brief summary: "Phase 3 complete! You covered: [list sub-topics]. Ready for Phase 4?"
-- Do NOT move to Phase 2 until Phase 1 is solid. Do NOT move to Phase 3 until Phase 2 is solid. And so on.
+${CATEGORY_CHECKLISTS[category] || "Cover all phases and sub-topics in the framework for this category in order."}
+
+CRITICAL RULES — NEVER VIOLATE THESE:
+1. TRACK YOUR PROGRESS: At the start of each response, mentally check which topics you have covered and which remain. Never move to the next topic until the current one is solid.
+2. ANNOUNCE TRANSITIONS: When moving to a new topic, explicitly say: "Now let's move to [next checklist item]."
+3. NEVER SKIP: If the candidate answers a checking question correctly, move to the NEXT UNCOVERED checklist item — not two items ahead, not the next phase.
+4. BLOCK SKIPPING: If the candidate tries to jump ahead, say: "Good enthusiasm! But we still need to cover [remaining items in current phase] first."
+5. PHASE SUMMARIES: At the END of each complete phase, list what was covered: "Phase 3 complete! You covered: [list]. Ready for Phase 4?"
+6. NEVER REPEAT a topic already covered unless the candidate asks to review it.
 
 TEACHING APPROACH:
 - Present one concept at a time
 - Ask a checking question after each concept
-- If they get it right, confirm why and advance to the NEXT sub-topic (not the next phase)
+- If they get it right, confirm why and advance to the NEXT uncovered checklist item
 - If they get it wrong, explain the rule, give a concrete example, then re-ask differently
 - Use concrete skating scenarios with notation when helpful (e.g. "A skater performs CCoSp with 5 revs on foot 1, 2 revs on foot 2...")
-- Reference phase numbers, sub-topic letters, and citation codes
-- NEVER give a blank or vague response. NEVER say just "think through the framework." Always give them something concrete to react to.
+- Reference phase numbers, sub-topic letters, and citation codes from the framework
+- NEVER give a blank or vague response. Always give something concrete to react to.
 - Every response must end with either a checking question OR a clear statement of what comes next.
 Keep responses under 250 words unless explaining a complex concept.`;
 
