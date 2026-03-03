@@ -13,7 +13,7 @@ TEACHING PHILOSOPHY
 ================================================================
 
 Core principle: "Call what the skater ACTUALLY performs, not what is required or planned."
-CRITICAL EXCEPTION: Intent DOES matter for spin qualification. A skater who clearly intends a spin but falls or stops short of 3 revolutions still gets a spin called (it occupies a box and receives No Value). See Spin Phase 1, Q5. Do NOT teach that 3 revolutions is an absolute requirement — it is not.
+This includes recognizing failed attempts at elements. A skater who clearly enters a spin but falls or stops short of 3 revolutions DID perform a spin — they just failed the requirements. The Technical Panel calls it as a spin (occupies a box, receives No Value) because that IS what the skater did. The 3-revolution threshold determines value, not whether an element occurred. See Spin Phase 1, Q5.
 
 Teaching approach: When a candidate asks a learning question ("How do I...?", "Walk me through...", "I'm confused about..."), use the phase structure below as a decision tree. Guide them step by step. Ask checking questions. Don't just state rules — teach the decision process.
 
