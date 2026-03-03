@@ -19,6 +19,9 @@ const CONFIG = {
   MODEL: "claude-sonnet-4-20250514",
   // Admin password for review dashboard (set in Render env vars)
   ADMIN_PASSWORD: process.env.ADMIN_PASSWORD || "admin2026",
+  // Usage limits (daily free prompts before user must supply own key)
+  FREE_DAILY_LIMIT: parseInt(process.env.FREE_DAILY_LIMIT) || 5,
+  BETA_DAILY_LIMIT: parseInt(process.env.BETA_DAILY_LIMIT) || 50,
   // Optional SendGrid email digest
   SENDGRID_API_KEY: process.env.SENDGRID_API_KEY || "",
   EMAIL_TO: process.env.EMAIL_TO || "",
@@ -89,6 +92,23 @@ db.exec(`
     data TEXT NOT NULL DEFAULT '{}',
     updated_at TEXT DEFAULT (datetime('now'))
   );
+
+  -- Daily API usage tracking per user
+  CREATE TABLE IF NOT EXISTS usage (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    username TEXT NOT NULL,
+    date TEXT NOT NULL,
+    count INTEGER DEFAULT 0,
+    UNIQUE(username, date)
+  );
+
+  -- Beta testers get a higher daily limit
+  CREATE TABLE IF NOT EXISTS beta_testers (
+    username TEXT PRIMARY KEY,
+    daily_limit INTEGER,
+    added_at TEXT DEFAULT (datetime('now')),
+    added_by TEXT
+  );
 `);
 
 // Create indexes for performance
@@ -155,6 +175,21 @@ const stmts = {
     INSERT INTO progress (username, data, updated_at) VALUES (?, ?, datetime('now'))
     ON CONFLICT(username) DO UPDATE SET data = excluded.data, updated_at = datetime('now')
   `),
+
+  // Usage
+  getUsage: db.prepare(`SELECT count FROM usage WHERE username = ? AND date = ?`),
+  upsertUsage: db.prepare(`
+    INSERT INTO usage (username, date, count) VALUES (?, ?, 1)
+    ON CONFLICT(username, date) DO UPDATE SET count = count + 1
+  `),
+
+  // Beta testers
+  getBetaTester: db.prepare(`SELECT * FROM beta_testers WHERE username = ?`),
+  getAllBetaTesters: db.prepare(`SELECT * FROM beta_testers ORDER BY added_at DESC`),
+  addBetaTester: db.prepare(`
+    INSERT OR REPLACE INTO beta_testers (username, daily_limit, added_by) VALUES (?, ?, ?)
+  `),
+  removeBetaTester: db.prepare(`DELETE FROM beta_testers WHERE username = ?`),
 };
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -399,6 +434,42 @@ app.post("/api/admin/feedback/:id/review", requireAdmin, (req, res) => {
 });
 
 // ══════════════════════════════════════════════════════════════════════════════
+// API ROUTES — ADMIN: BETA TESTERS
+// ══════════════════════════════════════════════════════════════════════════════
+
+// List all beta testers
+app.get("/api/admin/beta-testers", requireAdmin, (req, res) => {
+  try {
+    const testers = stmts.getAllBetaTesters.all();
+    res.json({ testers, defaultLimit: CONFIG.FREE_DAILY_LIMIT, betaDefault: CONFIG.BETA_DAILY_LIMIT });
+  } catch (e) {
+    res.status(500).json({ error: "Failed to fetch beta testers" });
+  }
+});
+
+// Add a beta tester
+app.post("/api/admin/beta-testers", requireAdmin, (req, res) => {
+  try {
+    const { username, dailyLimit } = req.body;
+    if (!username) return res.status(400).json({ error: "Username required" });
+    stmts.addBetaTester.run(username.trim(), dailyLimit || null, "admin");
+    res.json({ success: true });
+  } catch (e) {
+    res.status(500).json({ error: "Failed to add beta tester" });
+  }
+});
+
+// Remove a beta tester
+app.delete("/api/admin/beta-testers/:username", requireAdmin, (req, res) => {
+  try {
+    stmts.removeBetaTester.run(req.params.username);
+    res.json({ success: true });
+  } catch (e) {
+    res.status(500).json({ error: "Failed to remove beta tester" });
+  }
+});
+
+// ══════════════════════════════════════════════════════════════════════════════
 // OPTIONAL: SENDGRID EMAIL DIGEST
 // ══════════════════════════════════════════════════════════════════════════════
 
@@ -450,17 +521,15 @@ const MAX_HISTORY_MESSAGES = 20;
 
 app.post("/api/chat", async (req, res) => {
   try {
-    const { message, messages, username, system } = req.body;
+    const { message, messages, username, system, userApiKey } = req.body;
 
     // Support both single message (legacy) and messages array (current frontend)
     const key = username || "anonymous";
     let chatMessages;
 
     if (messages && Array.isArray(messages)) {
-      // Frontend sends full conversation — use it directly
       chatMessages = messages.slice(-MAX_HISTORY_MESSAGES);
     } else if (message) {
-      // Legacy single-message format — manage history server-side
       if (!conversationHistory[key]) conversationHistory[key] = [];
       conversationHistory[key].push({ role: "user", content: message });
       if (conversationHistory[key].length > MAX_HISTORY_MESSAGES) {
@@ -471,11 +540,36 @@ app.post("/api/chat", async (req, res) => {
       return res.status(400).json({ error: "Message required" });
     }
 
-    if (!CONFIG.ANTHROPIC_API_KEY) {
+    // Determine which API key to use and check usage limits
+    let apiKey = null;
+    let usingOwnKey = false;
+    const today = new Date().toISOString().split("T")[0];
+
+    if (userApiKey) {
+      // User supplied their own key — no limits
+      apiKey = userApiKey;
+      usingOwnKey = true;
+    } else if (CONFIG.ANTHROPIC_API_KEY) {
+      // Using server key — check daily limit
+      const beta = stmts.getBetaTester.get(key);
+      const dailyLimit = beta ? (beta.daily_limit || CONFIG.BETA_DAILY_LIMIT) : CONFIG.FREE_DAILY_LIMIT;
+      const usageRow = stmts.getUsage.get(key, today);
+      const used = usageRow?.count || 0;
+
+      if (used >= dailyLimit) {
+        return res.json({
+          error: "free_limit_reached",
+          message: `You've used all ${dailyLimit} free responses for today. Add your own API key in Settings for unlimited access.`,
+          _usage: { used, limit: dailyLimit, remaining: 0 },
+        });
+      }
+
+      apiKey = CONFIG.ANTHROPIC_API_KEY;
+    } else {
       return res.json({ content: [{ text: "API key not configured. Set ANTHROPIC_API_KEY in environment." }] });
     }
 
-    const client = new Anthropic({ apiKey: CONFIG.ANTHROPIC_API_KEY });
+    const client = new Anthropic({ apiKey });
     const systemPrompt = system || "You are a figure skating technical panel study assistant.";
     const response = await client.messages.create({
       model: CONFIG.MODEL,
@@ -486,13 +580,23 @@ app.post("/api/chat", async (req, res) => {
 
     const text = response.content?.[0]?.text || "No response.";
 
+    // Track usage when using server key
+    let _usage = undefined;
+    if (!usingOwnKey) {
+      stmts.upsertUsage.run(key, today);
+      const usageRow = stmts.getUsage.get(key, today);
+      const used = usageRow?.count || 0;
+      const beta = stmts.getBetaTester.get(key);
+      const dailyLimit = beta ? (beta.daily_limit || CONFIG.BETA_DAILY_LIMIT) : CONFIG.FREE_DAILY_LIMIT;
+      _usage = { used, limit: dailyLimit, remaining: Math.max(0, dailyLimit - used) };
+    }
+
     // Store in server history for legacy callers
     if (message && !messages) {
       conversationHistory[key].push({ role: "assistant", content: text });
     }
 
-    // Return in Anthropic-compatible format so the frontend can read data.content[0].text
-    res.json({ content: [{ text }] });
+    res.json({ content: [{ text }], _usage });
   } catch (e) {
     console.error("Chat error:", e);
     res.status(500).json({ error: "Chat failed" });

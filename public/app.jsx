@@ -1258,6 +1258,9 @@ Keep responses focused and clear. Use concrete examples. When explaining why an 
   
   // Handle free limit reached (backend proxy only)
   if (data.error === "free_limit_reached") {
+    if (data._usage && appState.onUsageUpdate) {
+      appState.onUsageUpdate(data._usage);
+    }
     return "⚠️ " + data.message;
   }
   if (data.error === "api_error") {
@@ -1929,7 +1932,7 @@ function SettingsScreen({ name, appSettings, setAppSettings, onBack }) {
             </div>
           ) : (
             <div style={{ color: "#8BA0B8", fontSize: "0.9rem" }}>
-              AI modes include {25} free responses. Quiz and Flashcard modes are always free.
+              AI modes include a limited number of free daily responses. Quiz and Flashcard modes are always free.
             </div>
           )}
         </div>
