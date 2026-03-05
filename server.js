@@ -469,6 +469,36 @@ app.delete("/api/admin/beta-testers/:username", requireAdmin, (req, res) => {
   }
 });
 
+// Admin usage stats
+app.get("/api/admin/usage", requireAdmin, (req, res) => {
+  try {
+    const today = new Date().toISOString().split("T")[0];
+    const weekAgo = new Date(Date.now() - 7 * 86400000).toISOString().split("T")[0];
+
+    const todayTotal = db.prepare(
+      `SELECT COALESCE(SUM(count), 0) as total FROM usage WHERE date = ?`
+    ).get(today);
+
+    const weekTotal = db.prepare(
+      `SELECT COALESCE(SUM(count), 0) as total, COUNT(DISTINCT username) as activeUsers FROM usage WHERE date >= ?`
+    ).get(weekAgo);
+
+    const users = db.prepare(
+      `SELECT username, SUM(count) as totalRequests, MAX(date) as lastActive
+       FROM usage GROUP BY username ORDER BY lastActive DESC`
+    ).all();
+
+    res.json({
+      today: todayTotal.total,
+      week: weekTotal.total,
+      activeUsersThisWeek: weekTotal.activeUsers,
+      users,
+    });
+  } catch (e) {
+    res.status(500).json({ error: "Failed to fetch usage stats" });
+  }
+});
+
 // ══════════════════════════════════════════════════════════════════════════════
 // OPTIONAL: SENDGRID EMAIL DIGEST
 // ══════════════════════════════════════════════════════════════════════════════

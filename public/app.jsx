@@ -1600,13 +1600,21 @@ function AdminDashboard({ name }) {
     status: "accepted", reviewerNotes: "",
     addToChangelog: false, changelogTitle: "", changelogDescription: "", changeType: "fix",
   });
+  const [usageData, setUsageData] = useState(null);
 
   const login = async () => {
     try {
       const res = await fetch("/api/admin/feedback?limit=1", { headers: { "x-admin-password": password } });
-      if (res.ok) { setAuthenticated(true); loadFeedback(); loadStats(); }
+      if (res.ok) { setAuthenticated(true); loadFeedback(); loadStats(); loadUsage(); }
       else alert("Invalid password");
     } catch { alert("Connection error"); }
+  };
+
+  const loadUsage = async () => {
+    try {
+      const res = await fetch("/api/admin/usage", { headers: { "x-admin-password": password } });
+      if (res.ok) setUsageData(await res.json());
+    } catch { /* silent */ }
   };
 
   const loadFeedback = async () => {
@@ -1640,7 +1648,7 @@ function AdminDashboard({ name }) {
     } catch { alert("Failed to submit review"); }
   };
 
-  useEffect(() => { if (authenticated) loadFeedback(); }, [filter, authenticated]);
+  useEffect(() => { if (authenticated) { loadFeedback(); loadUsage(); } }, [filter, authenticated]);
 
   if (!authenticated) {
     return (
@@ -1671,6 +1679,59 @@ function AdminDashboard({ name }) {
 
   return (
     <div>
+      {/* Usage overview */}
+      {usageData && (
+        <div style={{
+          background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)",
+          borderRadius: "10px", padding: "1rem", marginBottom: "1.25rem",
+        }}>
+          <div style={{ color: "#6B8CAE", marginBottom: "0.75rem", fontWeight: "bold", fontSize: "0.85rem" }}>
+            Chatbot Usage
+          </div>
+          <div style={{ display: "flex", gap: "1.5rem", marginBottom: "0.75rem", flexWrap: "wrap" }}>
+            <div style={{ textAlign: "center" }}>
+              <div style={{ fontSize: "1.5rem", fontWeight: "bold", color: "#A8D8EA" }}>{usageData.today}</div>
+              <div style={{ fontSize: "0.7rem", color: "#4A6080" }}>Requests today</div>
+            </div>
+            <div style={{ textAlign: "center" }}>
+              <div style={{ fontSize: "1.5rem", fontWeight: "bold", color: "#A8D8EA" }}>{usageData.week}</div>
+              <div style={{ fontSize: "0.7rem", color: "#4A6080" }}>Past 7 days</div>
+            </div>
+            <div style={{ textAlign: "center" }}>
+              <div style={{ fontSize: "1.5rem", fontWeight: "bold", color: "#A8D8EA" }}>{usageData.activeUsersThisWeek}</div>
+              <div style={{ fontSize: "0.7rem", color: "#4A6080" }}>Active users (7d)</div>
+            </div>
+          </div>
+          {usageData.users.length > 0 && (
+            <div style={{ maxHeight: "200px", overflowY: "auto" }}>
+              <table style={{ width: "100%", fontSize: "0.78rem", borderCollapse: "collapse" }}>
+                <thead>
+                  <tr style={{ color: "#6B8CAE", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+                    <th style={{ textAlign: "left", padding: "0.3rem 0.5rem", fontWeight: "600" }}>User</th>
+                    <th style={{ textAlign: "right", padding: "0.3rem 0.5rem", fontWeight: "600" }}>Total Requests</th>
+                    <th style={{ textAlign: "right", padding: "0.3rem 0.5rem", fontWeight: "600" }}>Last Active</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {usageData.users.map(u => (
+                    <tr key={u.username} style={{ borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
+                      <td style={{ padding: "0.3rem 0.5rem", color: "#A8D8EA" }}>{u.username}</td>
+                      <td style={{ padding: "0.3rem 0.5rem", color: "#FFFFFF", textAlign: "right" }}>{u.totalRequests}</td>
+                      <td style={{ padding: "0.3rem 0.5rem", color: "#4A6080", textAlign: "right" }}>{u.lastActive}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+          {usageData.users.length === 0 && (
+            <div style={{ color: "#4A6080", fontSize: "0.8rem", textAlign: "center", padding: "0.5rem" }}>
+              No usage recorded yet
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Filter bar */}
       <div style={{ display: "flex", gap: "0.4rem", marginBottom: "1.25rem", flexWrap: "wrap" }}>
         {filters.map(f => (
