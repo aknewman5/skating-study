@@ -195,11 +195,12 @@
     }
 
     async function loadData() {
+      const safe = (p) => p.catch(() => ({}));
       const [fb, users, fw, ct] = await Promise.all([
-        adminFetch("/api/admin/feedback"),
-        adminFetch("/api/admin/users"),
-        adminFetch("/api/admin/framework"),
-        adminFetch("/api/admin/content"),
+        safe(adminFetch("/api/admin/feedback")),
+        safe(adminFetch("/api/admin/users")),
+        safe(adminFetch("/api/admin/framework")),
+        safe(adminFetch("/api/admin/content")),
       ]);
       data.feedback = fb.feedback || [];
       data.users = users.users || {};
