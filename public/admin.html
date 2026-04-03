@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TP Study Assistant — Admin</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #0A1628; color: #C0D0E8; font-family: Georgia, serif; }
+    
+    .login-wrap { min-height: 100vh; display: flex; align-items: center; justify-content: center; }
+    .login-box { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 16px; padding: 2rem; width: 320px; text-align: center; }
+    .login-box h2 { font-size: 0.8rem; letter-spacing: 3px; text-transform: uppercase; color: #A8D8EA; margin-bottom: 1.5rem; }
+    .login-box input { width: 100%; padding: 0.75rem; background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.15); border-radius: 8px; color: #fff;
+      font-size: 1rem; outline: none; font-family: inherit; margin-bottom: 1rem; }
+    .login-box button { width: 100%; padding: 0.75rem; background: #0D7377; border: none;
+      border-radius: 8px; color: #fff; font-size: 0.95rem; cursor: pointer; font-family: inherit; }
+    .login-box .error { color: #F87171; font-size: 0.8rem; margin-top: 0.5rem; }
+
+    .admin { min-height: 100vh; }
+    .admin-header { background: rgba(26,42,74,0.95); border-bottom: 1px solid rgba(255,255,255,0.08);
+      padding: 1rem 2rem; display: flex; align-items: center; justify-content: space-between;
+      position: sticky; top: 0; z-index: 10; }
+    .admin-header h1 { font-size: 1rem; font-weight: normal; }
+    .admin-header .tag { font-size: 0.65rem; letter-spacing: 3px; text-transform: uppercase; color: #6B8CAE; }
+
+    .tabs { display: flex; gap: 0; border-bottom: 1px solid rgba(255,255,255,0.08); padding: 0 2rem; background: rgba(26,42,74,0.5); }
+    .tab { padding: 0.75rem 1.5rem; cursor: pointer; font-size: 0.85rem; color: #6B8CAE;
+      border-bottom: 2px solid transparent; font-family: inherit; background: none; border-top: none; border-left: none; border-right: none; }
+    .tab.active { color: #A8D8EA; border-bottom-color: #0D7377; }
+    .tab .badge { background: #0D7377; color: #fff; font-size: 0.65rem; padding: 0.1rem 0.4rem;
+      border-radius: 10px; margin-left: 0.4rem; }
+
+    .content { max-width: 1000px; margin: 0 auto; padding: 2rem; }
+    
+    .card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 12px; padding: 1.25rem; margin-bottom: 1rem; }
+    .card-header { font-size: 0.75rem; letter-spacing: 2px; text-transform: uppercase; color: #A8D8EA; margin-bottom: 1rem; }
+    
+    .stat-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+    .stat { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 8px; padding: 1rem; text-align: center; }
+    .stat .num { font-size: 2rem; color: #A8D8EA; }
+    .stat .label { font-size: 0.75rem; color: #6B8CAE; margin-top: 0.25rem; }
+
+    .feedback-item { border-left: 3px solid #0D7377; padding: 0.75rem 1rem; margin-bottom: 0.75rem;
+      background: rgba(255,255,255,0.02); border-radius: 0 8px 8px 0; }
+    .feedback-item.dispute { border-left-color: #F59E0B; }
+    .feedback-item .meta { font-size: 0.75rem; color: #6B8CAE; margin-bottom: 0.4rem; }
+    .feedback-item .issue { color: #C0D0E8; font-size: 0.9rem; line-height: 1.5; }
+    .feedback-item .correction { color: #4ADE80; font-size: 0.85rem; margin-top: 0.4rem; font-style: italic; }
+    .feedback-item .ai-response { color: #4A6080; font-size: 0.8rem; margin-top: 0.4rem;
+      max-height: 60px; overflow: hidden; cursor: pointer; }
+    .feedback-item .ai-response.expanded { max-height: none; }
+    .feedback-item .convo { color: #4A6080; font-size: 0.8rem; white-space: pre-wrap; margin-top: 0.4rem;
+      max-height: 80px; overflow: hidden; cursor: pointer; }
+    .feedback-item .convo.expanded { max-height: none; }
+
+    .user-row { display: flex; justify-content: space-between; align-items: center;
+      padding: 0.6rem 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
+    .user-row .name { color: #A8D8EA; }
+    .user-row .usage { color: #6B8CAE; font-size: 0.85rem; }
+    .user-row .bar-wrap { width: 120px; height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px; }
+    .user-row .bar { height: 100%; border-radius: 3px; background: #0D7377; }
+
+    .framework-editor { width: 100%; min-height: 400px; padding: 1rem; background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.15); border-radius: 8px; color: #C0D0E8;
+      font-family: 'Courier New', monospace; font-size: 0.8rem; line-height: 1.6;
+      resize: vertical; outline: none; }
+    .save-bar { display: flex; justify-content: space-between; align-items: center; margin-top: 1rem; }
+    .save-bar button { padding: 0.6rem 1.5rem; background: #0D7377; border: none; border-radius: 8px;
+      color: #fff; cursor: pointer; font-family: inherit; font-size: 0.9rem; }
+    .save-bar .status { font-size: 0.85rem; color: #4ADE80; }
+
+    .refresh-btn { background: none; border: 1px solid rgba(255,255,255,0.15); color: #6B8CAE;
+      padding: 0.25rem 0.75rem; border-radius: 6px; cursor: pointer; font-size: 0.75rem; font-family: inherit; }
+
+    .content-controls { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1rem; }
+    .content-controls button { padding: 0.4rem 1rem; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 6px; color: #6B8CAE; cursor: pointer; font-family: inherit; font-size: 0.8rem; }
+    .content-controls button.active { background: rgba(13,115,119,0.3); border-color: #0D7377; color: #A8D8EA; }
+
+    .content-item { border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 1rem;
+      margin-bottom: 0.75rem; background: rgba(255,255,255,0.02); }
+    .content-item.modified { border-left: 3px solid #F59E0B; }
+    .content-item .item-header { display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
+    .content-item .item-id { font-size: 0.7rem; color: #0D7377; font-family: monospace; }
+    .content-item .item-preview { font-size: 0.85rem; color: #C0D0E8; margin-top: 0.3rem;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 700px; }
+    .content-item .item-badge { font-size: 0.6rem; padding: 0.15rem 0.5rem; border-radius: 4px;
+      background: rgba(245,158,11,0.2); color: #F59E0B; }
+
+    .edit-panel { margin-top: 1rem; padding-top: 1rem; border-top: 1px solid rgba(255,255,255,0.08); }
+    .edit-panel label { display: block; font-size: 0.75rem; color: #6B8CAE; margin-bottom: 0.3rem; margin-top: 0.75rem; }
+    .edit-panel textarea, .edit-panel input[type="text"] { width: 100%; padding: 0.6rem; background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.15); border-radius: 6px; color: #C0D0E8;
+      font-family: Georgia, serif; font-size: 0.85rem; outline: none; resize: vertical; }
+    .edit-panel textarea { min-height: 80px; }
+    .edit-panel input[type="text"] { height: 2.2rem; }
+    .edit-panel .option-row { display: flex; gap: 0.5rem; align-items: center; margin-bottom: 0.4rem; }
+    .edit-panel .option-row input[type="checkbox"] { accent-color: #0D7377; }
+    .edit-panel .option-row .opt-label { width: 1.5rem; color: #A8D8EA; font-weight: bold; font-size: 0.85rem; }
+    .edit-panel .btn-row { display: flex; gap: 0.5rem; margin-top: 1rem; }
+    .edit-panel .btn-save { padding: 0.5rem 1.2rem; background: #0D7377; border: none; border-radius: 6px;
+      color: #fff; cursor: pointer; font-family: inherit; font-size: 0.85rem; }
+    .edit-panel .btn-revert { padding: 0.5rem 1.2rem; background: rgba(248,113,113,0.15); border: 1px solid rgba(248,113,113,0.3);
+      border-radius: 6px; color: #F87171; cursor: pointer; font-family: inherit; font-size: 0.85rem; }
+    .edit-panel .btn-cancel { padding: 0.5rem 1.2rem; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 6px; color: #6B8CAE; cursor: pointer; font-family: inherit; font-size: 0.85rem; }
+    .edit-panel .save-status { font-size: 0.8rem; color: #4ADE80; margin-left: 0.5rem; line-height: 2.2rem; }
+
+    @media (max-width: 600px) {
+      .stat-grid { grid-template-columns: 1fr 1fr; }
+      .content { padding: 1rem; }
+      .tabs { padding: 0 1rem; overflow-x: auto; }
+    }
+  </style>
+</head>
+<body>
+  <div id="admin-root"></div>
+  <script>
+    const ADMIN_PASSWORD = "%%ADMIN_PASS%%"; // replaced by server
+
+    let authed = false;
+    let activeTab = "overview";
+    let data = { feedback: [], users: {}, framework: "" };
+    let contentData = { mc_questions: [], flashcards: [] };
+    let contentFilter = { category: "all", type: "flashcards" };
+    let expandedItem = null;
+
+    function render() {
+      const root = document.getElementById("admin-root");
+      if (!authed) {
+        root.innerHTML = renderLogin();
+        return;
+      }
+      root.innerHTML = renderAdmin();
+      attachEvents();
+    }
+
+    function renderLogin() {
+      return `<div class="login-wrap"><div class="login-box">
+        <h2>Admin Access</h2>
+        <input type="password" id="pass-input" placeholder="Password" />
+        <button onclick="tryLogin()">Enter</button>
+        <div class="error" id="login-error"></div>
+      </div></div>`;
+    }
+
+    async function tryLogin() {
+      const pass = document.getElementById("pass-input").value;
+      const res = await fetch("/api/admin/verify", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password: pass })
+      });
+      const d = await res.json();
+      if (d.ok) {
+        authed = true;
+        window._adminPass = pass;
+        await loadData();
+        render();
+      } else {
+        document.getElementById("login-error").textContent = "Incorrect password";
+      }
+    }
+
+    async function adminFetch(url) {
+      const res = await fetch(url, { headers: { "x-admin-password": window._adminPass } });
+      return res.json();
+    }
+
+    async function adminPost(url, body) {
+      const res = await fetch(url, {
+        method: "POST", headers: { "Content-Type": "application/json", "x-admin-password": window._adminPass },
+        body: JSON.stringify(body)
+      });
+      return res.json();
+    }
+
+    async function adminPut(url, body) {
+      const res = await fetch(url, {
+        method: "PUT", headers: { "Content-Type": "application/json", "x-admin-password": window._adminPass },
+        body: JSON.stringify(body)
+      });
+      return res.json();
+    }
+
+    async function adminDelete(url) {
+      const res = await fetch(url, {
+        method: "DELETE", headers: { "x-admin-password": window._adminPass }
+      });
+      return res.json();
+    }
+
+    async function loadData() {
+      const [fb, users, fw, ct] = await Promise.all([
+        adminFetch("/api/admin/feedback"),
+        adminFetch("/api/admin/users"),
+        adminFetch("/api/admin/framework"),
+        adminFetch("/api/admin/content"),
+      ]);
+      data.feedback = fb.feedback || [];
+      data.users = users.users || {};
+      data.framework = fw.framework || "";
+      contentData.mc_questions = ct.mc_questions || [];
+      contentData.flashcards = ct.flashcards || [];
+    }
+
+    function renderAdmin() {
+      const fbCount = data.feedback.length;
+      const disputes = data.feedback.filter(f => f.type === "auto_dispute").length;
+      const manual = data.feedback.filter(f => f.type === "manual").length;
+      const userCount = Object.keys(data.users).length;
+      const totalUsage = Object.values(data.users).reduce((s, v) => s + v, 0);
+
+      const byCat = {};
+      data.feedback.forEach(f => { byCat[f.category] = (byCat[f.category] || 0) + 1; });
+
+      return `
+        <div class="admin">
+          <div class="admin-header">
+            <div><div class="tag">TP Study Assistant</div><h1>Admin Dashboard</h1></div>
+            <button class="refresh-btn" onclick="refresh()">↻ Refresh</button>
+          </div>
+          <div class="tabs">
+            <button class="tab ${activeTab === 'overview' ? 'active' : ''}" onclick="switchTab('overview')">Overview</button>
+            <button class="tab ${activeTab === 'feedback' ? 'active' : ''}" onclick="switchTab('feedback')">
+              Feedback ${fbCount > 0 ? `<span class="badge">${fbCount}</span>` : ''}
+            </button>
+            <button class="tab ${activeTab === 'users' ? 'active' : ''}" onclick="switchTab('users')">Users</button>
+            <button class="tab ${activeTab === 'framework' ? 'active' : ''}" onclick="switchTab('framework')">Framework</button>
+            <button class="tab ${activeTab === 'content' ? 'active' : ''}" onclick="switchTab('content')">Content</button>
+          </div>
+          <div class="content">
+            ${activeTab === 'overview' ? renderOverview(fbCount, disputes, manual, userCount, totalUsage, byCat) : ''}
+            ${activeTab === 'feedback' ? renderFeedback() : ''}
+            ${activeTab === 'users' ? renderUsers() : ''}
+            ${activeTab === 'framework' ? renderFramework() : ''}
+            ${activeTab === 'content' ? renderContent() : ''}
+          </div>
+        </div>`;
+    }
+
+    function renderOverview(fbCount, disputes, manual, userCount, totalUsage, byCat) {
+      return `
+        <div class="stat-grid">
+          <div class="stat"><div class="num">${userCount}</div><div class="label">Testers</div></div>
+          <div class="stat"><div class="num">${totalUsage}</div><div class="label">Total AI Responses</div></div>
+          <div class="stat"><div class="num">${manual}</div><div class="label">Manual Reports</div></div>
+          <div class="stat"><div class="num" style="color:${disputes > 0 ? '#F59E0B' : '#A8D8EA'}">${disputes}</div><div class="label">Auto-Flagged Disputes</div></div>
+        </div>
+        ${fbCount > 0 ? `
+        <div class="card">
+          <div class="card-header">Issues by Category</div>
+          ${Object.entries(byCat).map(([cat, n]) => 
+            `<div style="display:flex;justify-content:space-between;padding:0.3rem 0;border-bottom:1px solid rgba(255,255,255,0.04)">
+              <span>${cat}</span><span style="color:#A8D8EA">${n}</span></div>`
+          ).join('')}
+        </div>
+        <div class="card">
+          <div class="card-header">Recent Feedback</div>
+          ${data.feedback.slice(-5).reverse().map(f => renderFeedbackItem(f)).join('')}
+        </div>` : '<div class="card"><div style="text-align:center;color:#6B8CAE;padding:2rem">No feedback yet — looking good!</div></div>'}
+      `;
+    }
+
+    function renderFeedback() {
+      if (!data.feedback.length) return '<div class="card" style="text-align:center;color:#6B8CAE;padding:2rem">No feedback yet</div>';
+      const sorted = [...data.feedback].reverse();
+      return `
+        <div style="margin-bottom:1rem;display:flex;gap:0.5rem">
+          <button class="refresh-btn" onclick="filterFeedback('all')" style="background:rgba(13,115,119,0.2)">All (${sorted.length})</button>
+          <button class="refresh-btn" onclick="filterFeedback('manual')">Manual (${sorted.filter(f=>f.type==='manual').length})</button>
+          <button class="refresh-btn" onclick="filterFeedback('auto_dispute')">Disputes (${sorted.filter(f=>f.type==='auto_dispute').length})</button>
+        </div>
+        <div id="feedback-list">${sorted.map(f => renderFeedbackItem(f)).join('')}</div>
+      `;
+    }
+
+    function renderFeedbackItem(f) {
+      const isDispute = f.type === "auto_dispute";
+      const time = new Date(f.timestamp).toLocaleString();
+      return `<div class="feedback-item ${isDispute ? 'dispute' : ''}">
+        <div class="meta">
+          <strong style="color:${isDispute ? '#F59E0B' : '#0D7377'}">${isDispute ? '⚡ Auto-dispute' : '⚑ Manual report'}</strong>
+          &nbsp;·&nbsp; ${f.username || 'anonymous'} &nbsp;·&nbsp; ${f.category || '?'}/${f.mode || '?'} &nbsp;·&nbsp; ${time}
+        </div>
+        ${f.issue ? `<div class="issue">${escHtml(f.issue)}</div>` : ''}
+        ${f.triggerMessage ? `<div class="issue">"${escHtml(f.triggerMessage)}"</div>` : ''}
+        ${f.correction ? `<div class="correction">Suggested: ${escHtml(f.correction)}</div>` : ''}
+        ${f.aiResponse ? `<div class="ai-response" onclick="this.classList.toggle('expanded')">AI said: ${escHtml(f.aiResponse)}</div>` : ''}
+        ${f.conversation ? `<div class="convo" onclick="this.classList.toggle('expanded')">${escHtml(f.conversation)}</div>` : ''}
+      </div>`;
+    }
+
+    function renderUsers() {
+      const entries = Object.entries(data.users);
+      if (!entries.length) return '<div class="card" style="text-align:center;color:#6B8CAE;padding:2rem">No users yet</div>';
+      const limit = 25;
+      return `<div class="card"><div class="card-header">Active Users (${entries.length})</div>
+        ${entries.sort((a,b) => b[1] - a[1]).map(([name, count]) => `
+          <div class="user-row">
+            <span class="name">${escHtml(name)}</span>
+            <div style="display:flex;align-items:center;gap:0.75rem">
+              <span class="usage">${count}/${limit}</span>
+              <div class="bar-wrap"><div class="bar" style="width:${Math.min(100, (count/limit)*100)}%"></div></div>
+            </div>
+          </div>
+        `).join('')}
+      </div>`;
+    }
+
+    function renderFramework() {
+      return `
+        <div class="card">
+          <div class="card-header">Framework Content (${data.framework.length.toLocaleString()} chars)</div>
+          <p style="color:#6B8CAE;font-size:0.8rem;margin-bottom:1rem;line-height:1.5">
+            This is the AI's knowledge base — what it uses to teach, answer questions, and explain quiz answers. 
+            Edits here persist across server restarts.
+          </p>
+          <textarea class="framework-editor" id="fw-editor">${escHtml(data.framework)}</textarea>
+          <div class="save-bar">
+            <span class="status" id="fw-status"></span>
+            <button onclick="saveFramework()">Save Framework</button>
+          </div>
+        </div>`;
+    }
+
+    async function saveFramework() {
+      const text = document.getElementById("fw-editor").value;
+      const res = await adminPost("/api/admin/framework", { framework: text });
+      if (res.ok) {
+        document.getElementById("fw-status").textContent = "✓ Saved — live now";
+        data.framework = text;
+        setTimeout(() => { const el = document.getElementById("fw-status"); if (el) el.textContent = ""; }, 3000);
+      }
+    }
+
+    function renderContent() {
+      const categories = ["all", "jumps", "spins", "steps", "choreo", "general"];
+      const items = contentFilter.type === "flashcards" ? contentData.flashcards : contentData.mc_questions;
+      const filtered = contentFilter.category === "all" ? items : items.filter(i => i.category === contentFilter.category);
+
+      const catCounts = {};
+      items.forEach(i => { catCounts[i.category] = (catCounts[i.category] || 0) + 1; });
+      catCounts.all = items.length;
+
+      return `
+        <div class="card">
+          <div class="card-header">Content Editor</div>
+          <div class="content-controls">
+            <button class="${contentFilter.type === 'flashcards' ? 'active' : ''}" onclick="setContentType('flashcards')">
+              Flashcards (${contentData.flashcards.length})
+            </button>
+            <button class="${contentFilter.type === 'mc' ? 'active' : ''}" onclick="setContentType('mc')">
+              Quiz Questions (${contentData.mc_questions.length})
+            </button>
+          </div>
+          <div class="content-controls">
+            ${categories.map(c => `
+              <button class="${contentFilter.category === c ? 'active' : ''}" onclick="setContentCategory('${c}')">
+                ${c === 'all' ? 'All' : c.charAt(0).toUpperCase() + c.slice(1)} (${catCounts[c] || 0})
+              </button>
+            `).join('')}
+          </div>
+          <div style="font-size:0.75rem;color:#6B8CAE;margin-bottom:1rem">
+            Showing ${filtered.length} items · <span style="color:#F59E0B">■</span> = modified
+          </div>
+          <div id="content-list">
+            ${filtered.map((item, idx) => renderContentItem(item, idx)).join('')}
+          </div>
+        </div>`;
+    }
+
+    function renderContentItem(item, idx) {
+      const isExpanded = expandedItem === item.id;
+      const isMC = !!item.options;
+
+      if (isExpanded) {
+        return isMC ? renderMCEditor(item) : renderFlashcardEditor(item);
+      }
+
+      const preview = isMC ? item.question : item.front;
+      return `
+        <div class="content-item ${item._modified ? 'modified' : ''}" onclick="toggleContentItem('${item.id}')">
+          <div class="item-header">
+            <div>
+              <span class="item-id">${item.id}</span>
+              ${item._modified ? '<span class="item-badge">modified</span>' : ''}
+            </div>
+          </div>
+          <div class="item-preview">${escHtml(preview)}</div>
+        </div>`;
+    }
+
+    function renderFlashcardEditor(item) {
+      return `
+        <div class="content-item ${item._modified ? 'modified' : ''}" id="edit-${item.id}">
+          <div class="item-header" onclick="toggleContentItem('${item.id}')">
+            <div>
+              <span class="item-id">${item.id}</span>
+              ${item._modified ? '<span class="item-badge">modified</span>' : ''}
+              <span style="font-size:0.75rem;color:#6B8CAE;margin-left:0.5rem">▼ editing</span>
+            </div>
+          </div>
+          <div class="edit-panel">
+            <label>Front</label>
+            <textarea id="fc-front-${item.id}" rows="3">${escHtml(item.front)}</textarea>
+            <label>Back</label>
+            <textarea id="fc-back-${item.id}" rows="6">${escHtml(item.back)}</textarea>
+            <div class="btn-row">
+              <button class="btn-save" onclick="event.stopPropagation(); saveFlashcard('${item.id}', '${item.category}')">Save</button>
+              ${item._modified ? `<button class="btn-revert" onclick="event.stopPropagation(); revertContent('${item.id}')">Revert to Default</button>` : ''}
+              <button class="btn-cancel" onclick="event.stopPropagation(); toggleContentItem('${item.id}')">Cancel</button>
+              <span class="save-status" id="status-${item.id}"></span>
+            </div>
+          </div>
+        </div>`;
+    }
+
+    function renderMCEditor(item) {
+      const optionKeys = Object.keys(item.options || {});
+      const correctSet = new Set(item.correct || []);
+
+      return `
+        <div class="content-item ${item._modified ? 'modified' : ''}" id="edit-${item.id}">
+          <div class="item-header" onclick="toggleContentItem('${item.id}')">
+            <div>
+              <span class="item-id">${item.id} [${item.type || 'multiple_choice'}]</span>
+              ${item._modified ? '<span class="item-badge">modified</span>' : ''}
+              <span style="font-size:0.75rem;color:#6B8CAE;margin-left:0.5rem">▼ editing</span>
+            </div>
+          </div>
+          <div class="edit-panel">
+            <label>Question</label>
+            <textarea id="mc-q-${item.id}" rows="3">${escHtml(item.question)}</textarea>
+
+            <label>Options (check the correct answer(s))</label>
+            ${optionKeys.map(k => `
+              <div class="option-row">
+                <input type="checkbox" id="mc-correct-${item.id}-${k}" ${correctSet.has(k) ? 'checked' : ''} />
+                <span class="opt-label">${k}:</span>
+                <input type="text" id="mc-opt-${item.id}-${k}" value="${escHtml(item.options[k])}" style="flex:1" />
+              </div>
+            `).join('')}
+
+            <div style="margin-top:0.5rem">
+              <button class="btn-cancel" style="font-size:0.75rem;padding:0.3rem 0.8rem" onclick="event.stopPropagation(); addOption('${item.id}')">+ Add Option</button>
+              <span id="new-opt-area-${item.id}"></span>
+            </div>
+
+            <label>Feedback / Explanation</label>
+            <textarea id="mc-fb-${item.id}" rows="3">${escHtml(item.feedback || '')}</textarea>
+
+            <label>Video URL (optional)</label>
+            <input type="text" id="mc-video-${item.id}" value="${escHtml(item.video_url || '')}" />
+
+            <label>Type</label>
+            <div class="content-controls" style="margin-top:0.3rem">
+              <button class="${(item.type || 'multiple_choice') === 'multiple_choice' ? 'active' : ''}"
+                onclick="event.stopPropagation(); document.getElementById('mc-type-${item.id}').value='multiple_choice'; this.classList.add('active'); this.nextElementSibling.classList.remove('active')">
+                Single Select
+              </button>
+              <button class="${item.type === 'multi_select' ? 'active' : ''}"
+                onclick="event.stopPropagation(); document.getElementById('mc-type-${item.id}').value='multi_select'; this.classList.add('active'); this.previousElementSibling.classList.remove('active')">
+                Multi Select
+              </button>
+            </div>
+            <input type="hidden" id="mc-type-${item.id}" value="${item.type || 'multiple_choice'}" />
+
+            <div class="btn-row">
+              <button class="btn-save" onclick="event.stopPropagation(); saveMC('${item.id}', '${item.category}')">Save</button>
+              ${item._modified ? `<button class="btn-revert" onclick="event.stopPropagation(); revertContent('${item.id}')">Revert to Default</button>` : ''}
+              <button class="btn-cancel" onclick="event.stopPropagation(); toggleContentItem('${item.id}')">Cancel</button>
+              <span class="save-status" id="status-${item.id}"></span>
+            </div>
+          </div>
+        </div>`;
+    }
+
+    function setContentType(type) {
+      contentFilter.type = type;
+      expandedItem = null;
+      render();
+    }
+
+    function setContentCategory(cat) {
+      contentFilter.category = cat;
+      expandedItem = null;
+      render();
+    }
+
+    function toggleContentItem(id) {
+      expandedItem = expandedItem === id ? null : id;
+      render();
+    }
+
+    function addOption(itemId) {
+      const area = document.getElementById('new-opt-area-' + itemId);
+      const nextKey = String.fromCharCode(65 + document.querySelectorAll('[id^="mc-opt-' + itemId + '"]').length);
+      const row = document.createElement('div');
+      row.className = 'option-row';
+      row.style.marginTop = '0.4rem';
+      row.innerHTML = `
+        <input type="checkbox" id="mc-correct-${itemId}-${nextKey}" />
+        <span class="opt-label">${nextKey}:</span>
+        <input type="text" id="mc-opt-${itemId}-${nextKey}" value="" style="flex:1" />
+      `;
+      area.appendChild(row);
+    }
+
+    async function saveFlashcard(id, category) {
+      const front = document.getElementById('fc-front-' + id).value;
+      const back = document.getElementById('fc-back-' + id).value;
+
+      const item = contentData.flashcards.find(f => f.id === id);
+      const saveData = { ...item, front, back };
+      delete saveData._modified;
+
+      const res = await adminPut('/api/admin/content/' + id, {
+        type: 'flashcard', category, data: saveData
+      });
+
+      if (res.ok) {
+        const statusEl = document.getElementById('status-' + id);
+        if (statusEl) statusEl.textContent = '✓ Saved';
+        const idx = contentData.flashcards.findIndex(f => f.id === id);
+        if (idx >= 0) { contentData.flashcards[idx] = { ...saveData, _modified: true }; }
+        setTimeout(() => { const el = document.getElementById('status-' + id); if (el) el.textContent = ''; }, 2000);
+      }
+    }
+
+    async function saveMC(id, category) {
+      const question = document.getElementById('mc-q-' + id).value;
+      const feedback = document.getElementById('mc-fb-' + id).value;
+      const video_url = document.getElementById('mc-video-' + id).value;
+      const type = document.getElementById('mc-type-' + id).value;
+
+      const options = {};
+      const correct = [];
+      const optInputs = document.querySelectorAll('[id^="mc-opt-' + id + '-"]');
+      optInputs.forEach(input => {
+        const key = input.id.split('-').pop();
+        const val = input.value.trim();
+        if (val) {
+          options[key] = val;
+          const checkbox = document.getElementById('mc-correct-' + id + '-' + key);
+          if (checkbox && checkbox.checked) correct.push(key);
+        }
+      });
+
+      const item = contentData.mc_questions.find(q => q.id === id);
+      const saveData = { ...item, question, options, correct, feedback, video_url, type };
+      delete saveData._modified;
+
+      const res = await adminPut('/api/admin/content/' + id, {
+        type: 'mc', category, data: saveData
+      });
+
+      if (res.ok) {
+        const statusEl = document.getElementById('status-' + id);
+        if (statusEl) statusEl.textContent = '✓ Saved';
+        const idx = contentData.mc_questions.findIndex(q => q.id === id);
+        if (idx >= 0) { contentData.mc_questions[idx] = { ...saveData, _modified: true }; }
+        setTimeout(() => { const el = document.getElementById('status-' + id); if (el) el.textContent = ''; }, 2000);
+      }
+    }
+
+    async function revertContent(id) {
+      if (!confirm('Revert this item to the original default? Your edits will be lost.')) return;
+      const res = await adminDelete('/api/admin/content/' + id);
+      if (res.ok) {
+        await loadData();
+        render();
+      }
+    }
+
+    function switchTab(tab) { activeTab = tab; render(); }
+    async function refresh() { await loadData(); render(); }
+    function filterFeedback(type) {
+      const items = document.querySelectorAll('.feedback-item');
+      items.forEach(el => {
+        if (type === 'all') { el.style.display = ''; return; }
+        el.style.display = el.classList.contains(type === 'auto_dispute' ? 'dispute' : '') 
+          ? '' : (type === 'manual' && !el.classList.contains('dispute') ? '' : 'none');
+      });
+    }
+    function escHtml(s) { const d = document.createElement('div'); d.textContent = s || ''; return d.innerHTML; }
+
+    // Init
+    document.addEventListener("keydown", e => {
+      if (e.key === "Enter" && !authed) tryLogin();
+    });
+    render();
+  </script>
+</body>
+</html>

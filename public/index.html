@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TP Study Assistant — U.S. Figure Skating</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #0A1628; overflow-x: hidden; }
+    #root { min-height: 100vh; }
+  </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"></script>
+</head>
+<body>
+  <div id="root"></div>
+  <script>
+    // Load app.jsx, fix ES module syntax, transform with Babel, then render
+    fetch('/app.jsx')
+      .then(function(r) {
+        if (!r.ok) throw new Error('Failed to load app.jsx: ' + r.status);
+        return r.text();
+      })
+      .then(function(code) {
+        // Remove ES module import (not supported in browser)
+        code = code.replace(
+          /import\s*\{[^}]+\}\s*from\s*["']react["']\s*;?/,
+          'const { useState, useEffect, useCallback, useRef } = React;'
+        );
+        // Remove export default (not supported in browser)
+        code = code.replace(/export\s+default\s+/, '');
+
+        // Transform JSX to plain JS using Babel
+        var transformed = Babel.transform(code, {
+          presets: ['react'],
+          filename: 'app.jsx'
+        }).code;
+
+        // Execute the transformed code in global scope
+        var script = document.createElement('script');
+        script.textContent = transformed;
+        document.body.appendChild(script);
+
+        // Now App should be defined globally — render it
+        var root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(React.createElement(App));
+      })
+      .catch(function(err) {
+        console.error('App load error:', err);
+        document.getElementById('root').innerHTML =
+          '<div style="color:#F0A0A0;padding:2rem;font-family:Georgia,serif;text-align:center;margin-top:4rem;">' +
+          '<div style="font-size:2rem;margin-bottom:1rem;">⚠</div>' +
+          '<h2 style="font-weight:normal;margin-bottom:0.5rem;">Failed to load application</h2>' +
+          '<p style="color:#6B8CAE;font-size:0.9rem;">' + err.message + '</p></div>';
+      });
+  </script>
+</body>
+</html>
