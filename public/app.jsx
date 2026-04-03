@@ -1761,6 +1761,20 @@ function AdminDashboard({ name }) {
 
   return (
     <div>
+      {/* Link to full admin dashboard */}
+      <div style={{
+        background: "rgba(13,115,119,0.15)", border: "1px solid rgba(13,115,119,0.3)",
+        borderRadius: "8px", padding: "0.75rem 1rem", marginBottom: "1rem",
+        display: "flex", alignItems: "center", justifyContent: "space-between",
+      }}>
+        <span style={{ color: "#A8D8EA", fontSize: "0.85rem" }}>
+          Need to edit questions, flashcards, or the framework?
+        </span>
+        <a href="/admin" target="_blank" style={{
+          background: "#0D7377", color: "#FFFFFF", padding: "0.4rem 1rem",
+          borderRadius: "6px", fontSize: "0.8rem", textDecoration: "none", fontFamily: "inherit",
+        }}>Open Full Admin Dashboard</a>
+      </div>
       {/* Filter bar */}
       <div style={{ display: "flex", gap: "0.4rem", marginBottom: "1.25rem", flexWrap: "wrap" }}>
         {filters.map(f => (
