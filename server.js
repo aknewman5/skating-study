@@ -520,17 +520,19 @@ app.get("/api/admin/content", requireAdmin, (req, res) => {
     const overrideMap = {};
     overrides.forEach(o => { overrideMap[o.id] = JSON.parse(o.data); });
 
-    // Merge defaults with overrides
+    // Merge defaults with overrides (include deleted items for admin view)
     const mc_questions = QUESTION_BANK_DEFAULTS.mc_questions.map(q => ({
       ...q,
       ...(overrideMap[q.id] || {}),
-      _modified: !!overrideMap[q.id]
+      _modified: !!overrideMap[q.id],
+      _deleted: !!(overrideMap[q.id] && overrideMap[q.id]._deleted)
     }));
 
     const flashcards = QUESTION_BANK_DEFAULTS.flashcards.map(f => ({
       ...f,
       ...(overrideMap[f.id] || {}),
-      _modified: !!overrideMap[f.id]
+      _modified: !!overrideMap[f.id],
+      _deleted: !!(overrideMap[f.id] && overrideMap[f.id]._deleted)
     }));
 
     res.json({ mc_questions, flashcards });
@@ -571,7 +573,10 @@ app.get("/api/content/overrides", (req, res) => {
   try {
     const overrides = stmts.getAllOverrides.all();
     const overrideMap = {};
-    overrides.forEach(o => { overrideMap[o.id] = JSON.parse(o.data); });
+    overrides.forEach(o => {
+      const parsed = JSON.parse(o.data);
+      overrideMap[o.id] = parsed;
+    });
 
     const frameworkRow = stmts.getFrameworkOverride.get();
 

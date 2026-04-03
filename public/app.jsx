@@ -1943,6 +1943,11 @@ export default function App() {
         const data = await res.json();
         if (data.overrides && Object.keys(data.overrides).length > 0) {
           for (const [id, override] of Object.entries(data.overrides)) {
+            if (override._deleted) {
+              QUESTION_BANK.mc_questions = QUESTION_BANK.mc_questions.filter(q => q.id !== id);
+              QUESTION_BANK.flashcards = QUESTION_BANK.flashcards.filter(f => f.id !== id);
+              continue;
+            }
             const mcIdx = QUESTION_BANK.mc_questions.findIndex(q => q.id === id);
             if (mcIdx >= 0) { QUESTION_BANK.mc_questions[mcIdx] = override; }
             const fcIdx = QUESTION_BANK.flashcards.findIndex(f => f.id === id);

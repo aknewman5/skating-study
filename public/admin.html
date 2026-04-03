@@ -385,12 +385,14 @@
 
       const preview = isMC ? item.question : item.front;
       return `
-        <div class="content-item ${item._modified ? 'modified' : ''}" onclick="toggleContentItem('${item.id}')">
+        <div class="content-item ${item._modified ? 'modified' : ''}" style="${item._deleted ? 'opacity:0.4;border-left:3px solid #F87171;' : ''}" onclick="toggleContentItem('${item.id}')">
           <div class="item-header">
             <div>
               <span class="item-id">${item.id}</span>
-              ${item._modified ? '<span class="item-badge">modified</span>' : ''}
+              ${item._deleted ? '<span class="item-badge" style="background:#F87171">deleted</span>' : ''}
+              ${item._modified && !item._deleted ? '<span class="item-badge">modified</span>' : ''}
             </div>
+            ${item._deleted ? '<button class="btn-save" style="font-size:0.7rem;padding:0.2rem 0.6rem" onclick="event.stopPropagation(); restoreContent(\'' + item.id + '\')">Restore</button>' : ''}
           </div>
           <div class="item-preview">${escHtml(preview)}</div>
         </div>`;
@@ -415,6 +417,7 @@
               <button class="btn-save" onclick="event.stopPropagation(); saveFlashcard('${item.id}', '${item.category}')">Save</button>
               ${item._modified ? `<button class="btn-revert" onclick="event.stopPropagation(); revertContent('${item.id}')">Revert to Default</button>` : ''}
               <button class="btn-cancel" onclick="event.stopPropagation(); toggleContentItem('${item.id}')">Cancel</button>
+              <button style="background:#F87171;color:#fff;border:none;padding:0.4rem 0.8rem;border-radius:6px;cursor:pointer;font-family:inherit;font-size:0.8rem;margin-left:auto" onclick="event.stopPropagation(); deleteContent('${item.id}', 'flashcard', '${item.category}')">Delete</button>
               <span class="save-status" id="status-${item.id}"></span>
             </div>
           </div>
@@ -475,6 +478,7 @@
               <button class="btn-save" onclick="event.stopPropagation(); saveMC('${item.id}', '${item.category}')">Save</button>
               ${item._modified ? `<button class="btn-revert" onclick="event.stopPropagation(); revertContent('${item.id}')">Revert to Default</button>` : ''}
               <button class="btn-cancel" onclick="event.stopPropagation(); toggleContentItem('${item.id}')">Cancel</button>
+              <button style="background:#F87171;color:#fff;border:none;padding:0.4rem 0.8rem;border-radius:6px;cursor:pointer;font-family:inherit;font-size:0.8rem;margin-left:auto" onclick="event.stopPropagation(); deleteContent('${item.id}', 'mc', '${item.category}')">Delete</button>
               <span class="save-status" id="status-${item.id}"></span>
             </div>
           </div>
@@ -571,6 +575,26 @@
 
     async function revertContent(id) {
       if (!confirm('Revert this item to the original default? Your edits will be lost.')) return;
+      const res = await adminDelete('/api/admin/content/' + id);
+      if (res.ok) {
+        await loadData();
+        render();
+      }
+    }
+
+    async function deleteContent(id, type, category) {
+      if (!confirm('Delete this item? Users will no longer see it. You can restore it later.')) return;
+      const res = await adminPut('/api/admin/content/' + id, {
+        type: type, category: category, data: { _deleted: true }
+      });
+      if (res.ok) {
+        expandedItem = null;
+        await loadData();
+        render();
+      }
+    }
+
+    async function restoreContent(id) {
       const res = await adminDelete('/api/admin/content/' + id);
       if (res.ok) {
         await loadData();
