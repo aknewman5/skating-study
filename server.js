@@ -120,10 +120,19 @@ db.exec(`
 let QUESTION_BANK_DEFAULTS = { mc_questions: [], flashcards: [] };
 try {
   const appContent = fs.readFileSync(path.join(__dirname, "public", "app.jsx"), "utf8");
-  const match = appContent.match(/const QUESTION_BANK\s*=\s*(\{[\s\S]*?\});/);
-  if (match) {
-    QUESTION_BANK_DEFAULTS = eval("(" + match[1] + ")");
-    console.log(`Loaded ${QUESTION_BANK_DEFAULTS.mc_questions.length} quiz questions and ${QUESTION_BANK_DEFAULTS.flashcards.length} flashcards from app.jsx`);
+  const startIdx = appContent.indexOf("QUESTION_BANK = {");
+  if (startIdx !== -1) {
+    const objStart = appContent.indexOf("{", startIdx);
+    let depth = 0, endIdx = -1;
+    for (let i = objStart; i < appContent.length; i++) {
+      if (appContent[i] === "{") depth++;
+      if (appContent[i] === "}") depth--;
+      if (depth === 0) { endIdx = i; break; }
+    }
+    if (endIdx > objStart) {
+      QUESTION_BANK_DEFAULTS = eval("(" + appContent.substring(objStart, endIdx + 1) + ")");
+      console.log(`Loaded ${QUESTION_BANK_DEFAULTS.mc_questions.length} quiz questions and ${QUESTION_BANK_DEFAULTS.flashcards.length} flashcards from app.jsx`);
+    }
   }
 } catch (e) {
   console.error("Failed to parse QUESTION_BANK from app.jsx:", e.message);
