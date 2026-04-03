@@ -1499,6 +1499,141 @@ function NotificationBell({ username }) {
   );
 }
 
+// ─── GUIDE PANEL ─────────────────────────────────────────────────────────────
+function GuidePanel() {
+  const sectionStyle = {
+    background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)",
+    borderRadius: "12px", padding: "1.5rem", marginBottom: "1.25rem",
+  };
+  const headingStyle = {
+    fontSize: "0.8rem", letterSpacing: "2px", textTransform: "uppercase",
+    color: "#A8D8EA", marginBottom: "1rem",
+  };
+  const textStyle = { color: "#8BA0B8", fontSize: "0.9rem", lineHeight: 1.7 };
+  const bulletStyle = { ...textStyle, marginBottom: "0.5rem", paddingLeft: "0.5rem" };
+  const labelStyle = { color: "#A8D8EA" };
+  const warningStyle = { color: "#F59E0B", fontWeight: "bold" };
+
+  return React.createElement("div", null,
+    // Beta banner
+    React.createElement("div", { style: {
+      background: "rgba(245,158,11,0.1)", border: "1px solid rgba(245,158,11,0.3)",
+      borderRadius: "12px", padding: "1.25rem", marginBottom: "1.5rem", textAlign: "center",
+    }},
+      React.createElement("div", { style: { color: "#F59E0B", fontSize: "1rem", fontWeight: "bold", marginBottom: "0.5rem" } }, "This tool is currently in beta"),
+      React.createElement("div", { style: { ...textStyle, fontSize: "0.85rem" } },
+        "Content is actively being reviewed and corrected. Do not treat any answer as authoritative. Always verify against the official TP Handbook."
+      )
+    ),
+
+    // What is this?
+    React.createElement("div", { style: sectionStyle },
+      React.createElement("div", { style: headingStyle }, "What is this?"),
+      React.createElement("p", { style: textStyle },
+        "The TP Study Assistant is a web-based study tool built to help you prepare for the U.S. Figure Skating Technical Panel seminar. It covers singles rules from the 2025-26 TP Handbook across jumps, spins, choreographic sequences, and general/step sequence topics."
+      )
+    ),
+
+    // Study Modes
+    React.createElement("div", { style: sectionStyle },
+      React.createElement("div", { style: headingStyle }, "Study Modes"),
+      React.createElement("div", { style: bulletStyle },
+        React.createElement("span", { style: labelStyle }, "Quiz"), " — Multiple choice questions from a built-in question bank (120 questions). Test your knowledge and get instant feedback. ", React.createElement("span", { style: { color: "#0D7377" } }, "Always free, no limits.")
+      ),
+      React.createElement("div", { style: bulletStyle },
+        React.createElement("span", { style: labelStyle }, "Flashcards"), " — Rapid-fire review cards (395 total) to reinforce key concepts. ", React.createElement("span", { style: { color: "#0D7377" } }, "Always free, no limits.")
+      ),
+      React.createElement("div", { style: bulletStyle },
+        React.createElement("span", { style: labelStyle }, "Learn"), " — AI-guided, Socratic-style teaching that walks you through the framework topic by topic. Uses AI responses (limited \u2014 see below)."
+      ),
+      React.createElement("div", { style: bulletStyle },
+        React.createElement("span", { style: labelStyle }, "Reference"), " — Ask the AI any rule question and get an answer with handbook citations. Uses AI responses (limited \u2014 see below)."
+      )
+    ),
+
+    // Other Tools
+    React.createElement("div", { style: sectionStyle },
+      React.createElement("div", { style: headingStyle }, "Other Tools"),
+      React.createElement("div", { style: bulletStyle },
+        React.createElement("span", { style: labelStyle }, "My Progress"), " — Track your accuracy, coverage, and mastery across categories"
+      ),
+      React.createElement("div", { style: bulletStyle },
+        React.createElement("span", { style: labelStyle }, "TPH Index"), " — Searchable citation index mapped to handbook sections"
+      ),
+      React.createElement("div", { style: bulletStyle },
+        React.createElement("span", { style: labelStyle }, "TPH Handbook"), " — Full embedded PDF of the 2025-26 TP Handbook for Singles"
+      )
+    ),
+
+    // AI Response Limits
+    React.createElement("div", { style: sectionStyle },
+      React.createElement("div", { style: headingStyle }, "AI Response Limits"),
+      React.createElement("p", { style: textStyle },
+        "Learn and Reference modes are powered by a live AI (Claude) and each response costs real money to run. Each user gets "
+      ),
+      React.createElement("p", { style: { ...textStyle, fontSize: "1.1rem", color: "#A8D8EA", textAlign: "center", margin: "1rem 0" } },
+        "25 free AI responses"
+      ),
+      React.createElement("p", { style: textStyle },
+        "Quiz and Flashcard modes are always unlimited and free. If you\u2019d like unlimited AI access, you can add your own API key (see below)."
+      )
+    ),
+
+    // How to get your own API key
+    React.createElement("div", { style: { ...sectionStyle, borderLeft: "3px solid #0D7377" } },
+      React.createElement("div", { style: headingStyle }, "How to Get Your Own API Key for Unlimited AI Access"),
+      React.createElement("p", { style: { ...textStyle, marginBottom: "1rem" } },
+        "If you use up your 25 free responses and want to keep using Learn and Reference modes, you can add your own Anthropic API key:"
+      ),
+      React.createElement("ol", { style: { ...textStyle, paddingLeft: "1.5rem" } },
+        React.createElement("li", { style: { marginBottom: "0.5rem" } },
+          "Go to ", React.createElement("span", { style: labelStyle }, "console.anthropic.com"), " and click ", React.createElement("strong", null, "Sign up")
+        ),
+        React.createElement("li", { style: { marginBottom: "0.5rem" } },
+          "Create an account with your email (Google sign-in also works)"
+        ),
+        React.createElement("li", { style: { marginBottom: "0.5rem" } },
+          "Once logged in, go to ", React.createElement("strong", { style: labelStyle }, "Settings \u2192 API Keys")
+        ),
+        React.createElement("li", { style: { marginBottom: "0.5rem" } },
+          "Click ", React.createElement("strong", null, "Create Key"), ", give it any name (e.g. \u201Cskating study\u201D), and copy the key \u2014 it starts with ", React.createElement("code", { style: { background: "rgba(255,255,255,0.08)", padding: "0.15rem 0.4rem", borderRadius: "4px", fontSize: "0.85rem" } }, "sk-ant-")
+        ),
+        React.createElement("li", { style: { marginBottom: "0.5rem" } },
+          "Back in this app, go to ", React.createElement("strong", { style: labelStyle }, "\u2699 Settings"), " and paste your key into the API key field"
+        )
+      ),
+      React.createElement("div", { style: {
+        background: "rgba(13,115,119,0.15)", borderRadius: "8px", padding: "1rem", marginTop: "1rem",
+      }},
+        React.createElement("div", { style: { ...textStyle, fontSize: "0.85rem" } },
+          React.createElement("strong", { style: labelStyle }, "How much does it cost? "),
+          "Anthropic uses prepaid credits. Add a minimum of $5 in credits (Settings \u2192 Billing \u2192 Add Credits). Each AI response costs roughly $0.10, so $5 gets you about 50 additional responses. You only pay for what you use \u2014 no subscription or recurring charge."
+        )
+      )
+    ),
+
+    // Beta Warning
+    React.createElement("div", { style: sectionStyle },
+      React.createElement("div", { style: headingStyle }, "Please Be Critical"),
+      React.createElement("p", { style: { ...textStyle, marginBottom: "0.75rem" } },
+        "The question bank, flashcard content, and AI responses are all works in progress. ", React.createElement("span", { style: warningStyle }, "Do not treat any answer as authoritative."), " Always verify against the official TP Handbook."
+      ),
+      React.createElement("div", { style: bulletStyle }, "\u2022 Use the flag/report button if you spot an error"),
+      React.createElement("div", { style: bulletStyle }, "\u2022 The AI can and will make mistakes \u2014 especially on nuanced edge-call scenarios, bonus calculations, and level-counting"),
+      React.createElement("div", { style: bulletStyle }, "\u2022 We are actively reviewing and correcting the question bank")
+    ),
+
+    // Privacy
+    React.createElement("div", { style: sectionStyle },
+      React.createElement("div", { style: headingStyle }, "Privacy & Anonymity"),
+      React.createElement("p", { style: textStyle },
+        "Your usage is ", React.createElement("strong", { style: labelStyle }, "completely anonymous"),
+        ". The username you enter is only used to save your study progress so you can pick up where you left off. It is not linked to your identity, your seminar registration, or your results at the seminar in any way. This tool has no connection to U.S. Figure Skating\u2019s evaluation process. It is only a study aid."
+      )
+    )
+  );
+}
+
 // ─── CHANGELOG PANEL ──────────────────────────────────────────────────────────
 function ChangelogPanel() {
   const [entries, setEntries] = useState([]);
@@ -2165,6 +2300,7 @@ function Dashboard({ name, progress, onSelectMode, onHome, onSettings, appSettin
           { id: "progress", label: "📊 My Progress" },
           { id: "tph", label: "📑 TPH Index" },
           { id: "handbook", label: "📄 TPH Handbook" },
+          { id: "guide", label: "📋 Guide" },
           { id: "changelog", label: "📝 Changelog" },
           { id: "admin", label: "🔧 Admin" },
         ].map(tab => (
@@ -2255,6 +2391,7 @@ function Dashboard({ name, progress, onSelectMode, onHome, onSettings, appSettin
         {dashTab === "progress" && <ProgressAnalytics progress={progress} />}
         {dashTab === "tph" && <TPHIndex />}
         {dashTab === "handbook" && <TPHViewer />}
+        {dashTab === "guide" && <GuidePanel />}
         {dashTab === "changelog" && <ChangelogPanel />}
         {dashTab === "admin" && <AdminDashboard name={name} />}
       </div>
