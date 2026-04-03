@@ -1366,7 +1366,7 @@ function FeedbackModal({ aiResponse, onClose, onSubmit }) {
           What should it say? (optional)
         </label>
         <textarea value={correction} onChange={e => setCorrection(e.target.value)}
-          placeholder="e.g., Only BI→FO is valid for sit spin edge change"
+          placeholder="e.g., Only BI to FO is valid for sit spin edge change"
           style={{
             width:"100%", minHeight:"60px", padding:"0.5rem", background:"rgba(255,255,255,0.06)",
             border:"1px solid rgba(255,255,255,0.15)", borderRadius:"8px", color:"#FFFFFF",
@@ -2033,7 +2033,7 @@ function SettingsScreen({ name, appSettings, setAppSettings, onBack }) {
         <button onClick={onBack} style={{
           background: "none", border: "1px solid rgba(255,255,255,0.15)", color: "#6B8CAE",
           padding: "0.25rem 0.75rem", borderRadius: "6px", cursor: "pointer", fontSize: "0.75rem", fontFamily: "inherit",
-        }}>← Back</button>
+        }}>{"<"} Back</button>
       </div>
 
       <div style={{ maxWidth: "600px", margin: "0 auto", padding: "2rem" }}>
@@ -2275,7 +2275,7 @@ function Dashboard({ name, progress, onSelectMode, onHome, onSettings, appSettin
             background: "none", border: "1px solid rgba(255,255,255,0.15)", color: "#6B8CAE",
             padding: "0.25rem 0.75rem", borderRadius: "6px", cursor: "pointer", fontSize: "0.75rem",
             fontFamily: "inherit", marginTop: "0.25rem",
-          }}>← Change Name</button>
+          }}>{"<"} Change Name</button>
           <button onClick={onSettings} style={{
             background: "none", border: "1px solid rgba(255,255,255,0.15)", color: "#6B8CAE",
             padding: "0.25rem 0.75rem", borderRadius: "6px", cursor: "pointer", fontSize: "0.75rem",
@@ -2447,7 +2447,7 @@ function ModeScreen({ category, mode, name, progress, updateProgress, onBack, ap
           background: "none", border: "1px solid rgba(255,255,255,0.15)", color: "#A8D8EA",
           padding: "0.3rem 0.75rem", borderRadius: "6px", cursor: "pointer",
           fontSize: "0.8rem", fontFamily: "inherit",
-        }}>← Dashboard</button>
+        }}>{"<"} Dashboard</button>
         <div style={{ height: "20px", width: "1px", background: "rgba(255,255,255,0.1)" }} />
         <span style={{ color: cat.color, fontSize: "1.1rem" }}>{cat.icon}</span>
         <span style={{ fontWeight: "bold", letterSpacing: "0.5px" }}>{cat.label}</span>
@@ -2780,12 +2780,9 @@ ${correct ? "Candidate got this right. Give a brief confirmation (1-2 sentences)
           <button onClick={next} style={{
             width: "100%", padding: "0.75rem", background: cat.color, border: "none",
             borderRadius: "8px", color: "#FFFFFF", cursor: "pointer", fontFamily: "inherit", fontSize: "0.95rem",
-          }}>{qIndex + 1 >= shuffled.length ? "See Results" : "Next Question →"}</button>
+          }}>{qIndex + 1 >= shuffled.length ? "See Results" : "Next Question >"}</button>
           <button onClick={() => setFeedbackTarget(
-            "Question: " + q.question + "
-Correct: " + q.correct.join(", ") + "
-Selected: " + selected.join(", ") + (aiExplanation ? "
-AI Explanation: " + aiExplanation : "")
+            "Question: " + q.question + "\nCorrect: " + q.correct.join(", ") + "\nSelected: " + selected.join(", ") + (aiExplanation ? "\nAI Explanation: " + aiExplanation : "")
           )} style={{
             padding: "0.5rem 0.75rem", background: "none", border: "1px solid rgba(255,255,255,0.12)",
             borderRadius: "8px", color: "#6B8CAE", cursor: "pointer", fontFamily: "inherit", fontSize: "0.8rem", marginTop: "0.5rem",
@@ -2896,7 +2893,7 @@ Make it test actual rule knowledge, not just definitions. Focus on edge cases an
           <button onClick={() => { setQCount(c=>c+1); generateQuestion(); }} style={{
             width:"100%", padding:"0.75rem", background:cat.color, border:"none",
             borderRadius:"8px", color:"#FFFFFF", cursor:"pointer", fontFamily:"inherit", fontSize:"0.95rem",
-          }}>Next Question →</button>
+          }}>Next Question ></button>
         </div>
       )}
     </div>
