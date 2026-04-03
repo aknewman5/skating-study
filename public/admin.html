@@ -366,9 +366,13 @@
               </button>
             `).join('')}
           </div>
-          <div style="font-size:0.75rem;color:#6B8CAE;margin-bottom:1rem">
-            Showing ${filtered.length} items · <span style="color:#F59E0B">■</span> = modified
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+            <div style="font-size:0.75rem;color:#6B8CAE">
+              Showing ${filtered.length} items · <span style="color:#F59E0B">&#9632;</span> = modified
+            </div>
+            <button style="background:#0D7377;color:#fff;border:none;padding:0.4rem 1rem;border-radius:6px;cursor:pointer;font-family:inherit;font-size:0.8rem" onclick="showAddNew()">+ Add New ${contentFilter.type === 'flashcards' ? 'Flashcard' : 'Question'}</button>
           </div>
+          <div id="add-new-form"></div>
           <div id="content-list">
             ${filtered.map((item, idx) => renderContentItem(item, idx)).join('')}
           </div>
@@ -577,6 +581,106 @@
       if (!confirm('Revert this item to the original default? Your edits will be lost.')) return;
       const res = await adminDelete('/api/admin/content/' + id);
       if (res.ok) {
+        await loadData();
+        render();
+      }
+    }
+
+    function showAddNew() {
+      const area = document.getElementById('add-new-form');
+      if (area.innerHTML) { area.innerHTML = ''; return; }
+      const isFC = contentFilter.type === 'flashcards';
+      const categories = ["jumps", "spins", "steps", "choreo", "general"];
+      const defaultCat = contentFilter.category !== 'all' ? contentFilter.category : 'jumps';
+
+      if (isFC) {
+        area.innerHTML = `
+          <div class="content-item modified" style="border-left:3px solid #0D7377;margin-bottom:1rem">
+            <div class="edit-panel" style="display:block">
+              <label>Category</label>
+              <select id="new-fc-cat" style="width:100%;padding:0.5rem;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);border-radius:6px;color:#fff;font-family:inherit;margin-bottom:0.75rem">
+                ${categories.map(c => '<option value="' + c + '"' + (c === defaultCat ? ' selected' : '') + '>' + c.charAt(0).toUpperCase() + c.slice(1) + '</option>').join('')}
+              </select>
+              <label>Front</label>
+              <textarea id="new-fc-front" rows="3" style="width:100%;padding:0.5rem;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);border-radius:6px;color:#fff;font-family:inherit;margin-bottom:0.75rem" placeholder="Question or prompt text"></textarea>
+              <label>Back</label>
+              <textarea id="new-fc-back" rows="6" style="width:100%;padding:0.5rem;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);border-radius:6px;color:#fff;font-family:inherit;margin-bottom:0.75rem" placeholder="Answer text"></textarea>
+              <div class="btn-row">
+                <button class="btn-save" onclick="saveNewFlashcard()">Save Flashcard</button>
+                <button class="btn-cancel" onclick="document.getElementById('add-new-form').innerHTML=''">Cancel</button>
+                <span class="save-status" id="new-fc-status"></span>
+              </div>
+            </div>
+          </div>`;
+      } else {
+        area.innerHTML = `
+          <div class="content-item modified" style="border-left:3px solid #0D7377;margin-bottom:1rem">
+            <div class="edit-panel" style="display:block">
+              <label>Category</label>
+              <select id="new-mc-cat" style="width:100%;padding:0.5rem;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);border-radius:6px;color:#fff;font-family:inherit;margin-bottom:0.75rem">
+                ${categories.map(c => '<option value="' + c + '"' + (c === defaultCat ? ' selected' : '') + '>' + c.charAt(0).toUpperCase() + c.slice(1) + '</option>').join('')}
+              </select>
+              <label>Question</label>
+              <textarea id="new-mc-q" rows="3" style="width:100%;padding:0.5rem;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);border-radius:6px;color:#fff;font-family:inherit;margin-bottom:0.75rem" placeholder="Question text"></textarea>
+              <label>Options (one per line, prefix correct answers with *)</label>
+              <textarea id="new-mc-opts" rows="6" style="width:100%;padding:0.5rem;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);border-radius:6px;color:#fff;font-family:inherit;margin-bottom:0.75rem" placeholder="A: First option\n*B: Correct answer\nC: Third option\nD: Fourth option"></textarea>
+              <label>Feedback / Explanation</label>
+              <textarea id="new-mc-fb" rows="3" style="width:100%;padding:0.5rem;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);border-radius:6px;color:#fff;font-family:inherit;margin-bottom:0.75rem" placeholder="Explanation shown after answering"></textarea>
+              <div class="btn-row">
+                <button class="btn-save" onclick="saveNewMC()">Save Question</button>
+                <button class="btn-cancel" onclick="document.getElementById('add-new-form').innerHTML=''">Cancel</button>
+                <span class="save-status" id="new-mc-status"></span>
+              </div>
+            </div>
+          </div>`;
+      }
+    }
+
+    async function saveNewFlashcard() {
+      var cat = document.getElementById('new-fc-cat').value;
+      var front = document.getElementById('new-fc-front').value.trim();
+      var back = document.getElementById('new-fc-back').value.trim();
+      if (!front || !back) { alert('Front and back are required'); return; }
+      var id = 'fc_custom_' + Date.now();
+      var data = { id: id, category: cat, front: front, back: back };
+      var res = await adminPut('/api/admin/content/' + id, { type: 'flashcard', category: cat, data: data });
+      if (res.ok) {
+        document.getElementById('new-fc-status').textContent = 'Saved!';
+        document.getElementById('add-new-form').innerHTML = '';
+        await loadData();
+        render();
+      }
+    }
+
+    async function saveNewMC() {
+      var cat = document.getElementById('new-mc-cat').value;
+      var question = document.getElementById('new-mc-q').value.trim();
+      var optsRaw = document.getElementById('new-mc-opts').value.trim();
+      var feedback = document.getElementById('new-mc-fb').value.trim();
+      if (!question || !optsRaw) { alert('Question and options are required'); return; }
+      var options = {};
+      var correct = [];
+      optsRaw.split('\n').forEach(function(line) {
+        line = line.trim();
+        if (!line) return;
+        var isCorrect = line.charAt(0) === '*';
+        if (isCorrect) line = line.substring(1).trim();
+        var match = line.match(/^([A-Za-z])[\s:.\-)]+(.+)/);
+        if (match) {
+          var key = match[1].toUpperCase();
+          options[key] = match[2].trim();
+          if (isCorrect) correct.push(key);
+        }
+      });
+      if (Object.keys(options).length < 2) { alert('Need at least 2 options'); return; }
+      if (correct.length === 0) { alert('Mark at least one correct answer with *'); return; }
+      var id = 'mc_custom_' + Date.now();
+      var type = correct.length > 1 ? 'multi_select' : 'multiple_choice';
+      var data = { id: id, category: cat, question: question, options: options, correct: correct, feedback: feedback, type: type };
+      var res = await adminPut('/api/admin/content/' + id, { type: 'mc', category: cat, data: data });
+      if (res.ok) {
+        document.getElementById('new-mc-status').textContent = 'Saved!';
+        document.getElementById('add-new-form').innerHTML = '';
         await loadData();
         render();
       }

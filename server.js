@@ -535,6 +535,20 @@ app.get("/api/admin/content", requireAdmin, (req, res) => {
       _deleted: !!(overrideMap[f.id] && overrideMap[f.id]._deleted)
     }));
 
+    // Add new items that only exist as overrides (not in defaults)
+    const defaultMCIds = new Set(QUESTION_BANK_DEFAULTS.mc_questions.map(q => q.id));
+    const defaultFCIds = new Set(QUESTION_BANK_DEFAULTS.flashcards.map(f => f.id));
+    overrides.forEach(o => {
+      const parsed = JSON.parse(o.data);
+      if (parsed._deleted) return;
+      if (o.type === "mc" && !defaultMCIds.has(o.id)) {
+        mc_questions.push({ ...parsed, id: o.id, category: o.category, _modified: true, _new: true });
+      }
+      if (o.type === "flashcard" && !defaultFCIds.has(o.id)) {
+        flashcards.push({ ...parsed, id: o.id, category: o.category, _modified: true, _new: true });
+      }
+    });
+
     res.json({ mc_questions, flashcards });
   } catch (e) {
     console.error("Content fetch error:", e);
@@ -573,15 +587,24 @@ app.get("/api/content/overrides", (req, res) => {
   try {
     const overrides = stmts.getAllOverrides.all();
     const overrideMap = {};
+    const newItems = [];
+    const defaultMCIds = new Set(QUESTION_BANK_DEFAULTS.mc_questions.map(q => q.id));
+    const defaultFCIds = new Set(QUESTION_BANK_DEFAULTS.flashcards.map(f => f.id));
+
     overrides.forEach(o => {
       const parsed = JSON.parse(o.data);
       overrideMap[o.id] = parsed;
+      // Track new items that aren't in defaults
+      if (!parsed._deleted && !defaultMCIds.has(o.id) && !defaultFCIds.has(o.id)) {
+        newItems.push({ ...parsed, id: o.id, category: o.category, _type: o.type });
+      }
     });
 
     const frameworkRow = stmts.getFrameworkOverride.get();
 
     res.json({
       overrides: overrideMap,
+      newItems: newItems,
       framework: frameworkRow ? frameworkRow.content : null
     });
   } catch (e) {

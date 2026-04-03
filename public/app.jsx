@@ -1954,6 +1954,19 @@ export default function App() {
             if (fcIdx >= 0) { QUESTION_BANK.flashcards[fcIdx] = override; }
           }
         }
+        if (data.newItems && data.newItems.length > 0) {
+          data.newItems.forEach(function(item) {
+            if (item._type === "mc" || item.options) {
+              if (!QUESTION_BANK.mc_questions.find(function(q) { return q.id === item.id; })) {
+                QUESTION_BANK.mc_questions.push(item);
+              }
+            } else {
+              if (!QUESTION_BANK.flashcards.find(function(f) { return f.id === item.id; })) {
+                QUESTION_BANK.flashcards.push(item);
+              }
+            }
+          });
+        }
         if (data.framework) { FRAMEWORK_CONTENT = data.framework; }
       } catch (e) { console.warn("Failed to load content overrides:", e); }
       setContentReady(true);
