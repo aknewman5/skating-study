@@ -506,14 +506,27 @@
       expandedItem = expandedItem === id ? null : id;
       render();
       if (expandedItem) {
-        var item = contentData.mc_questions.find(function(q) { return q.id === id; });
-        if (!item) item = contentData.flashcards.find(function(f) { return f.id === id; });
-        if (item && item.options) {
-          Object.keys(item.options).forEach(function(k) {
-            var el = document.getElementById('mc-opt-' + id + '-' + k);
-            if (el) el.value = item.options[k];
-          });
-        }
+        setTimeout(function() {
+          var item = contentData.mc_questions.find(function(q) { return q.id === id; });
+          if (!item) item = contentData.flashcards.find(function(f) { return f.id === id; });
+          if (item && item.options) {
+            Object.keys(item.options).forEach(function(k) {
+              var el = document.getElementById('mc-opt-' + id + '-' + k);
+              if (el) el.value = item.options[k];
+            });
+          }
+          // Also set question and feedback via JS for safety
+          if (item) {
+            var qEl = document.getElementById('mc-q-' + id);
+            if (qEl && item.question) qEl.value = item.question;
+            var fbEl = document.getElementById('mc-fb-' + id);
+            if (fbEl) fbEl.value = item.feedback || '';
+            var fcFront = document.getElementById('fc-front-' + id);
+            if (fcFront && item.front) fcFront.value = item.front;
+            var fcBack = document.getElementById('fc-back-' + id);
+            if (fcBack && item.back) fcBack.value = item.back;
+          }
+        }, 0);
       }
     }
 
