@@ -2637,6 +2637,10 @@ function QuizMode({ category, cat, name, updateProgress, appSettings, setAppSett
     const correct = isCorrect();
     updateProgress(category, correct ? "correct" : "incorrect", { questionId: q.id });
     setScore(s => ({ correct: s.correct + (correct ? 1 : 0), total: s.total + 1 }));
+    // Track answer anonymously for analytics
+    fetch("/api/answer", { method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ questionId: q.id, category: category, correct: correct, selected: selected })
+    }).catch(function() {});
 
     if (!correct || !q.feedback) {
       setLoadingExplanation(true);

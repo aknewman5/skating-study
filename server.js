@@ -101,6 +101,19 @@ db.exec(`
 `);
 
 db.exec(`
+  CREATE TABLE IF NOT EXISTS question_answers (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    question_id TEXT NOT NULL,
+    category TEXT NOT NULL,
+    correct INTEGER NOT NULL,
+    selected TEXT,
+    created_at TEXT DEFAULT (datetime('now'))
+  );
+  CREATE INDEX IF NOT EXISTS idx_qa_question ON question_answers(question_id);
+  CREATE INDEX IF NOT EXISTS idx_qa_category ON question_answers(category);
+`);
+
+db.exec(`
   CREATE TABLE IF NOT EXISTS content_overrides (
     id TEXT PRIMARY KEY,
     type TEXT NOT NULL,
@@ -451,6 +464,78 @@ app.post("/api/admin/feedback/:id/review", requireAdmin, (req, res) => {
   } catch (e) {
     console.error("Review error:", e);
     res.status(500).json({ error: "Failed to review feedback" });
+  }
+});
+
+// ══════════════════════════════════════════════════════════════════════════════
+// API ROUTES — QUESTION ANSWER TRACKING
+// ══════════════════════════════════════════════════════════════════════════════
+
+// Record a question answer (anonymous)
+app.post("/api/answer", (req, res) => {
+  try {
+    const { questionId, category, correct, selected } = req.body;
+    if (!questionId || !category || correct === undefined) {
+      return res.status(400).json({ error: "questionId, category, and correct are required" });
+    }
+    db.prepare("INSERT INTO question_answers (question_id, category, correct, selected) VALUES (?, ?, ?, ?)")
+      .run(questionId, category, correct ? 1 : 0, JSON.stringify(selected || []));
+    res.json({ ok: true });
+  } catch (e) {
+    res.json({ ok: true }); // fail silently — don't break the quiz
+  }
+});
+
+// Admin: get analytics
+app.get("/api/admin/analytics", requireAdmin, (req, res) => {
+  try {
+    // Category accuracy
+    const catStats = db.prepare(`
+      SELECT category,
+        COUNT(*) as total,
+        SUM(correct) as correct_count,
+        ROUND(100.0 * SUM(correct) / COUNT(*), 1) as accuracy
+      FROM question_answers GROUP BY category ORDER BY accuracy ASC
+    `).all();
+
+    // Per-question stats (most missed)
+    const questionStats = db.prepare(`
+      SELECT question_id, category,
+        COUNT(*) as attempts,
+        SUM(correct) as correct_count,
+        ROUND(100.0 * SUM(correct) / COUNT(*), 1) as accuracy
+      FROM question_answers GROUP BY question_id
+      HAVING COUNT(*) >= 2
+      ORDER BY accuracy ASC LIMIT 30
+    `).all();
+
+    // Aggregate user progress from progress table
+    const allProgress = db.prepare("SELECT data FROM progress").all();
+    const categoryAgg = {};
+    allProgress.forEach(row => {
+      try {
+        const d = JSON.parse(row.data);
+        Object.entries(d).forEach(([cat, p]) => {
+          if (!categoryAgg[cat]) categoryAgg[cat] = { correct: 0, incorrect: 0, users: 0 };
+          categoryAgg[cat].correct += (p.correct || 0);
+          categoryAgg[cat].incorrect += (p.incorrect || 0);
+          if ((p.correct || 0) + (p.incorrect || 0) > 0) categoryAgg[cat].users++;
+        });
+      } catch {}
+    });
+
+    // Total unique users
+    const userCount = allProgress.length;
+
+    res.json({
+      categoryAccuracy: catStats,
+      mostMissed: questionStats,
+      progressByCategory: categoryAgg,
+      totalUsers: userCount
+    });
+  } catch (e) {
+    console.error("Analytics error:", e);
+    res.status(500).json({ error: "Failed to fetch analytics" });
   }
 });
 

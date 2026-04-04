@@ -129,6 +129,7 @@
     let contentData = { mc_questions: [], flashcards: [] };
     let contentFilter = { category: "all", type: "flashcards" };
     let expandedItem = null;
+    let analyticsData = null;
 
     function render() {
       const root = document.getElementById("admin-root");
@@ -207,6 +208,8 @@
       data.framework = fw.framework || "";
       contentData.mc_questions = ct.mc_questions || [];
       contentData.flashcards = ct.flashcards || [];
+      // Load analytics
+      try { analyticsData = await adminFetch("/api/admin/analytics"); } catch(e) { analyticsData = null; }
     }
 
     function renderAdmin() {
@@ -233,6 +236,7 @@
             <button class="tab ${activeTab === 'users' ? 'active' : ''}" onclick="switchTab('users')">Users</button>
             <button class="tab ${activeTab === 'framework' ? 'active' : ''}" onclick="switchTab('framework')">Framework</button>
             <button class="tab ${activeTab === 'content' ? 'active' : ''}" onclick="switchTab('content')">Content</button>
+            <button class="tab ${activeTab === 'analytics' ? 'active' : ''}" onclick="switchTab('analytics')">Analytics</button>
           </div>
           <div class="content">
             ${activeTab === 'overview' ? renderOverview(fbCount, disputes, manual, userCount, totalUsage, byCat) : ''}
@@ -240,6 +244,7 @@
             ${activeTab === 'users' ? renderUsers() : ''}
             ${activeTab === 'framework' ? renderFramework() : ''}
             ${activeTab === 'content' ? renderContent() : ''}
+            ${activeTab === 'analytics' ? renderAnalytics() : ''}
           </div>
         </div>`;
     }
@@ -705,6 +710,89 @@
         await loadData();
         render();
       }
+    }
+
+    function renderAnalytics() {
+      if (!analyticsData) return '<div class="card" style="text-align:center;color:#6B8CAE;padding:2rem">No analytics data yet. Users need to answer quiz questions first.</div>';
+
+      var html = '';
+
+      // Overall stats
+      html += '<div class="stat-grid">';
+      html += '<div class="stat"><div class="num">' + (analyticsData.totalUsers || 0) + '</div><div class="label">Total Users</div></div>';
+      var totalAnswers = (analyticsData.categoryAccuracy || []).reduce(function(s, c) { return s + c.total; }, 0);
+      var totalCorrect = (analyticsData.categoryAccuracy || []).reduce(function(s, c) { return s + c.correct_count; }, 0);
+      var overallAcc = totalAnswers > 0 ? Math.round(100 * totalCorrect / totalAnswers) : 0;
+      html += '<div class="stat"><div class="num">' + totalAnswers + '</div><div class="label">Total Answers</div></div>';
+      html += '<div class="stat"><div class="num">' + overallAcc + '%</div><div class="label">Overall Accuracy</div></div>';
+      html += '</div>';
+
+      // Category accuracy (sorted worst to best)
+      var cats = analyticsData.categoryAccuracy || [];
+      if (cats.length > 0) {
+        html += '<div class="card"><div class="card-header">Accuracy by Category (lowest first)</div>';
+        cats.forEach(function(c) {
+          var pct = c.accuracy || 0;
+          var color = pct < 50 ? '#F87171' : pct < 70 ? '#F59E0B' : '#34D399';
+          html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:0.5rem 0;border-bottom:1px solid rgba(255,255,255,0.04)">';
+          html += '<span style="text-transform:capitalize">' + (c.category || 'unknown') + '</span>';
+          html += '<div style="display:flex;align-items:center;gap:1rem">';
+          html += '<div style="width:150px;height:8px;background:rgba(255,255,255,0.08);border-radius:4px;overflow:hidden"><div style="width:' + pct + '%;height:100%;background:' + color + ';border-radius:4px"></div></div>';
+          html += '<span style="color:' + color + ';font-size:0.9rem;min-width:45px;text-align:right">' + pct + '%</span>';
+          html += '<span style="color:#6B8CAE;font-size:0.75rem">(' + c.total + ' answers)</span>';
+          html += '</div></div>';
+        });
+        html += '</div>';
+      }
+
+      // Progress by category (from user progress data)
+      var prog = analyticsData.progressByCategory || {};
+      var progKeys = Object.keys(prog);
+      if (progKeys.length > 0) {
+        html += '<div class="card"><div class="card-header">User Progress by Category (all users combined)</div>';
+        progKeys.sort(function(a, b) {
+          var pctA = prog[a].correct + prog[a].incorrect > 0 ? prog[a].correct / (prog[a].correct + prog[a].incorrect) : 0;
+          var pctB = prog[b].correct + prog[b].incorrect > 0 ? prog[b].correct / (prog[b].correct + prog[b].incorrect) : 0;
+          return pctA - pctB;
+        });
+        progKeys.forEach(function(cat) {
+          var p = prog[cat];
+          var total = p.correct + p.incorrect;
+          var pct = total > 0 ? Math.round(100 * p.correct / total) : 0;
+          var color = pct < 50 ? '#F87171' : pct < 70 ? '#F59E0B' : '#34D399';
+          html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:0.5rem 0;border-bottom:1px solid rgba(255,255,255,0.04)">';
+          html += '<span style="text-transform:capitalize">' + cat + '</span>';
+          html += '<div style="display:flex;align-items:center;gap:1rem">';
+          html += '<div style="width:150px;height:8px;background:rgba(255,255,255,0.08);border-radius:4px;overflow:hidden"><div style="width:' + pct + '%;height:100%;background:' + color + ';border-radius:4px"></div></div>';
+          html += '<span style="color:' + color + ';font-size:0.9rem;min-width:45px;text-align:right">' + pct + '%</span>';
+          html += '<span style="color:#6B8CAE;font-size:0.75rem">' + p.correct + '/' + total + ' correct, ' + p.users + ' users</span>';
+          html += '</div></div>';
+        });
+        html += '</div>';
+      }
+
+      // Most missed questions
+      var missed = analyticsData.mostMissed || [];
+      if (missed.length > 0) {
+        html += '<div class="card"><div class="card-header">Most Missed Questions (2+ attempts, lowest accuracy first)</div>';
+        missed.forEach(function(q) {
+          var pct = q.accuracy || 0;
+          var color = pct < 50 ? '#F87171' : pct < 70 ? '#F59E0B' : '#34D399';
+          // Try to find the question text
+          var mcQ = contentData.mc_questions.find(function(m) { return m.id === q.question_id; });
+          var preview = mcQ ? mcQ.question.substring(0, 120) : q.question_id;
+          html += '<div style="padding:0.5rem 0;border-bottom:1px solid rgba(255,255,255,0.04)">';
+          html += '<div style="display:flex;justify-content:space-between;align-items:center">';
+          html += '<span style="font-size:0.8rem;color:#A8D8EA">' + q.question_id + '</span>';
+          html += '<span style="color:' + color + ';font-size:0.85rem">' + pct + '% (' + q.correct_count + '/' + q.attempts + ')</span>';
+          html += '</div>';
+          html += '<div style="font-size:0.8rem;color:#6B8CAE;margin-top:0.2rem">' + escHtml(preview) + '</div>';
+          html += '</div>';
+        });
+        html += '</div>';
+      }
+
+      return html;
     }
 
     function switchTab(tab) { activeTab = tab; render(); }
