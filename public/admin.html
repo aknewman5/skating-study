@@ -447,10 +447,11 @@
 
             <label>Options (check the correct answer(s))</label>
             ${optionKeys.map(k => `
-              <div class="option-row">
+              <div class="option-row" id="opt-row-${item.id}-${k}">
                 <input type="checkbox" id="mc-correct-${item.id}-${k}" ${correctSet.has(k) ? 'checked' : ''} />
                 <span class="opt-label">${k}:</span>
                 <input type="text" id="mc-opt-${item.id}-${k}" value="${escHtml(item.options[k])}" style="flex:1" />
+                <button onclick="event.stopPropagation(); document.getElementById('opt-row-${item.id}-${k}').remove()" style="background:none;border:1px solid rgba(248,113,113,0.4);color:#F87171;padding:0.2rem 0.5rem;border-radius:4px;cursor:pointer;font-size:0.75rem;margin-left:0.3rem" title="Remove option ${k}">X</button>
               </div>
             `).join('')}
 
