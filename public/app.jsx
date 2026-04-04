@@ -1499,6 +1499,91 @@ function NotificationBell({ username }) {
   );
 }
 
+// ─── STUDY MATERIALS REFERENCE MAP ────────────────────────────────────────────
+var STUDY_MATERIALS = [
+  {
+    id: "general-falls-choreo",
+    title: "Session 1: General Rules, Falls, and Choreographic Sequences",
+    file: "/ppts/general-falls-choreo.pptx",
+    categories: ["general", "choreo"],
+    topics: ["Calling procedure", "Falls definition and deductions", "Review process", "Time limits", "ChSq confirmation", "ChSq jumps and termination"]
+  },
+  {
+    id: "jumps-1",
+    title: "Session 2: Jumps - Part 1",
+    file: "/ppts/jumps-session-1.pptx",
+    categories: ["jumps"],
+    topics: ["Jump definitions", "Combinations vs sequences", "Euler rules", "Rotation assessment (q, <, <<)", "Edge calls (e, !)", "Popped jumps", "SP jump rules"]
+  },
+  {
+    id: "jumps-2",
+    title: "Session 3: Jumps - Part 2",
+    file: "/ppts/jumps-session-2.pptx",
+    categories: ["jumps"],
+    topics: ["FS repetition rules", "Extra jumps and combos", "Bonus rules by level", "Written code and vetting", "ERB order (Edge-Rotation-Bonus)"]
+  },
+  {
+    id: "steps",
+    title: "Session 4: Step Sequences",
+    file: "/ppts/steps-session.pptx",
+    categories: ["steps"],
+    topics: ["Step sequence definition", "Turn types and counting", "Level features (rotation, body, turn combos)", "Distribution requirement", "Level caps by competitive level"]
+  },
+  {
+    id: "spins-1",
+    title: "Sessions 5-6: Spins - Phases 1-3 and Features 1-8",
+    file: "/ppts/spins-part-1.pptx",
+    categories: ["spins"],
+    topics: ["Phase 1: Is it a spin?", "Phase 2: What code?", "Phase 3: Does it have value?", "V flags and No Value", "Features 1-8: DVs, CFJ, JW, DCP, entrance, exit, edge change, both directions"]
+  }
+];
+
+function getStudyMaterialForCategory(category) {
+  return STUDY_MATERIALS.filter(function(m) { return m.categories.indexOf(category) >= 0; });
+}
+
+// ─── STUDY MATERIALS PANEL ───────────────────────────────────────────────────
+function StudyMaterials() {
+  var sec = {
+    background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)",
+    borderRadius: "12px", padding: "1.5rem", marginBottom: "1.25rem"
+  };
+
+  return React.createElement("div", null,
+    React.createElement("div", { style: { fontSize: "0.8rem", letterSpacing: "2px", textTransform: "uppercase", color: "#A8D8EA", marginBottom: "1rem" } }, "Study Materials"),
+    React.createElement("p", { style: { color: "#8BA0B8", fontSize: "0.9rem", lineHeight: 1.7, marginBottom: "1.5rem" } },
+      "Download these presentation slides to supplement your study. They cover the same material as the quiz and flashcard questions, organized by session topic."
+    ),
+    STUDY_MATERIALS.map(function(m) {
+      return React.createElement("div", { key: m.id, style: sec },
+        React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "flex-start" } },
+          React.createElement("div", null,
+            React.createElement("div", { style: { color: "#A8D8EA", fontSize: "1rem", marginBottom: "0.5rem" } }, m.title),
+            React.createElement("div", { style: { color: "#6B8CAE", fontSize: "0.8rem", marginBottom: "0.5rem" } },
+              "Categories: " + m.categories.join(", ")
+            ),
+            React.createElement("div", { style: { color: "#8BA0B8", fontSize: "0.85rem", lineHeight: 1.6 } },
+              m.topics.map(function(t, i) {
+                return React.createElement("span", { key: i },
+                  (i > 0 ? " | " : ""), t
+                );
+              })
+            )
+          ),
+          React.createElement("a", {
+            href: m.file, download: true,
+            style: {
+              background: "#0D7377", color: "#FFFFFF", padding: "0.5rem 1rem",
+              borderRadius: "6px", fontSize: "0.8rem", textDecoration: "none",
+              fontFamily: "inherit", whiteSpace: "nowrap", marginLeft: "1rem"
+            }
+          }, "Download")
+        )
+      );
+    })
+  );
+}
+
 // ─── GUIDE PANEL ─────────────────────────────────────────────────────────────
 function GuidePanel() {
   var sec = {
@@ -2324,6 +2409,7 @@ function Dashboard({ name, progress, onSelectMode, onHome, onSettings, appSettin
           { id: "progress", label: "📊 My Progress" },
           { id: "tph", label: "📑 TPH Index" },
           { id: "handbook", label: "📄 TPH Handbook" },
+          { id: "materials", label: "📂 Materials" },
           { id: "guide", label: "📋 Guide" },
           { id: "changelog", label: "📝 Changelog" },
           { id: "admin", label: "🔧 Admin" },
@@ -2415,6 +2501,7 @@ function Dashboard({ name, progress, onSelectMode, onHome, onSettings, appSettin
         {dashTab === "progress" && <ProgressAnalytics progress={progress} />}
         {dashTab === "tph" && <TPHIndex />}
         {dashTab === "handbook" && <TPHViewer />}
+        {dashTab === "materials" && <StudyMaterials />}
         {dashTab === "guide" && <GuidePanel />}
         {dashTab === "changelog" && <ChangelogPanel />}
         {dashTab === "admin" && <AdminDashboard name={name} />}
@@ -2531,6 +2618,9 @@ TEACHING APPROACH:
 - Reference phase numbers, sub-topic letters, and citation codes
 - NEVER give a blank or vague response. NEVER say just "think through the framework." Always give them something concrete to react to.
 - Every response must end with either a checking question OR a clear statement of what comes next.
+- When a candidate struggles with a concept, suggest they review the relevant study material. Available materials by category:
+${getStudyMaterialForCategory(category).map(function(m) { return "  - " + m.title + " (covers: " + m.topics.join(", ") + ")"; }).join("\n")}
+- Frame the suggestion naturally, e.g. "This is covered in detail in the Spins Part 1 slides -- you can download them from the Materials tab."
 Keep responses under 250 words unless explaining a complex concept.`;
 
   const aiState = { candidateName: name, apiKey: appSettings?.apiKey, onUsageUpdate: (u) => setAppSettings?.(p => ({ ...p, usage: u })) };
@@ -2812,6 +2902,14 @@ ${correct ? "Candidate got this right. Give a brief confirmation (1-2 sentences)
             {q.feedback && <p style={{ margin: 0, color: "#C0D0E0", fontSize: "0.85rem", lineHeight: 1.6 }}>{q.feedback}</p>}
             {loadingExplanation && <p style={{ color: "#6B8CAE", fontSize: "0.85rem", fontStyle: "italic" }}>Getting explanation...</p>}
             {aiExplanation && <p style={{ margin: q.feedback ? "0.5rem 0 0" : 0, color: "#C0D0E0", fontSize: "0.85rem", lineHeight: 1.6 }}>{aiExplanation}</p>}
+            {!correct && getStudyMaterialForCategory(category).length > 0 && (
+              <div style={{ marginTop: "0.75rem", padding: "0.5rem 0.75rem", background: "rgba(13,115,119,0.15)", borderRadius: "6px" }}>
+                <div style={{ color: "#A8D8EA", fontSize: "0.8rem", marginBottom: "0.25rem" }}>Review this material:</div>
+                {getStudyMaterialForCategory(category).map(function(m) {
+                  return React.createElement("a", { key: m.id, href: m.file, download: true, style: { color: "#0D7377", fontSize: "0.8rem", marginRight: "1rem" } }, m.title);
+                })}
+              </div>
+            )}
           </div>
           <button onClick={next} style={{
             width: "100%", padding: "0.75rem", background: cat.color, border: "none",
@@ -2970,9 +3068,21 @@ function FlashcardMode({ category, cat, updateProgress }) {
           <div><div style={{fontSize:"2rem",color:"#C0392B"}}>{learn}</div><div style={{fontSize:"0.75rem",color:"#6B8CAE"}}>Need work</div></div>
         </div>
         {learn + unsure > 0 && (
-          <p style={{ color:"#8BA0B8", fontSize:"0.85rem", marginBottom:"1.5rem" }}>
-            {learn + unsure} card{learn+unsure>1?"s":""} to review again
-          </p>
+          <div>
+            <p style={{ color:"#8BA0B8", fontSize:"0.85rem", marginBottom:"0.75rem" }}>
+              {learn + unsure} card{learn+unsure>1?"s":""} to review again
+            </p>
+            {getStudyMaterialForCategory(category).length > 0 && (
+              <div style={{ background:"rgba(13,115,119,0.15)", borderRadius:"8px", padding:"0.75rem", marginBottom:"1.5rem", textAlign:"left" }}>
+                <div style={{ color:"#A8D8EA", fontSize:"0.8rem", marginBottom:"0.4rem" }}>Review the study slides for this topic:</div>
+                {getStudyMaterialForCategory(category).map(function(m) {
+                  return React.createElement("div", { key: m.id, style: { marginBottom: "0.25rem" } },
+                    React.createElement("a", { href: m.file, download: true, style: { color: "#0D7377", fontSize: "0.8rem" } }, m.title)
+                  );
+                })}
+              </div>
+            )}
+          </div>
         )}
         <button onClick={() => { setIndex(0); setFlipped(false); setRatings({}); setDone(false); }} style={{
           padding:"0.6rem 1.5rem", background:cat.color, border:"none",
@@ -3064,7 +3174,10 @@ The candidate is looking up a specific rule or concept.
 - Give the TPH citation code if available (format: [TPH-S §SECTION.TOPIC])
 - Give ONE concrete example that illustrates the rule
 - If the rule has common exceptions or traps, note them briefly
-- Keep responses focused — no more than 200 words unless the rule is genuinely complex`;
+- Keep responses focused — no more than 200 words unless the rule is genuinely complex
+- When relevant, mention that the candidate can review the study materials for more detail. Available for this category:
+${getStudyMaterialForCategory(category).map(function(m) { return "  - " + m.title; }).join("\n")}
+- Frame naturally, e.g. "For a deeper walkthrough of this, check the Materials tab."`;
 
   const search = async () => {
     if (!query.trim() || loading) return;
