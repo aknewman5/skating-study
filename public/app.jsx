@@ -1924,6 +1924,12 @@ function AdminDashboard({ name }) {
             <span style={{ fontSize: "0.65rem", color: "#3A5070" }}>{new Date(f.created_at).toLocaleString()}</span>
           </div>
 
+          {f.trigger_message && (
+            <div style={{ margin: "0 0 0.5rem", padding: "0.5rem 0.75rem", background: "rgba(168,216,234,0.08)", borderRadius: "6px", fontSize: "0.8rem", color: "#A8D8EA", lineHeight: 1.5, whiteSpace: "pre-wrap" }}>
+              {f.trigger_message}
+            </div>
+          )}
+
           <p style={{ margin: "0 0 0.5rem", fontSize: "0.85rem", lineHeight: 1.5 }}>{f.issue}</p>
 
           {f.correction && (
@@ -2950,7 +2956,7 @@ ${correct ? "Candidate got this right. Give a brief confirmation (1-2 sentences)
       )}
       {feedbackTarget && <FeedbackModal aiResponse={feedbackTarget} onClose={() => setFeedbackTarget(null)}
         onSubmit={({ issue, correction, aiResponse }) => {
-          submitFeedback({ username: name, category, mode: "quiz", issue, correction, aiResponse: aiResponse?.slice(0, 500), type: "report" });
+          submitFeedback({ username: name, category, mode: "quiz", issue, correction, aiResponse: aiResponse?.slice(0, 500), type: "report", triggerMessage: "Question ID: " + q.id + "\nQuestion: " + q.question });
         }} />}
     </div>
   );
