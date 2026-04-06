@@ -27,7 +27,10 @@ const CONFIG = {
 };
 
 // ─── DATABASE SETUP ──────────────────────────────────────────────────────────
-const db = new Database(path.join(__dirname, "feedback.db"));
+// Use persistent disk on Render (/data), fall back to local directory for dev
+const DB_DIR = fs.existsSync("/data") ? "/data" : __dirname;
+const db = new Database(path.join(DB_DIR, "feedback.db"));
+console.log(`Database location: ${path.join(DB_DIR, "feedback.db")}`);
 db.pragma("journal_mode = WAL");
 db.pragma("foreign_keys = ON");
 
