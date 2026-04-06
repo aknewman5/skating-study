@@ -844,7 +844,13 @@ function ProgressAnalytics({ progress }) {
     const seen = p.seen?.length || 0;
     const learnTopics = p.learnTopics?.length || 0;
     const flashcardsSeen = p.flashcardsSeen || 0;
-    return { ...cat, correct, incorrect, attempted, pct, mcTotal, fcTotal, seen, learnTopics, flashcardsSeen };
+    const quiz = p.quiz || { correct: 0, incorrect: 0 };
+    const learn = p.learn || { correct: 0, incorrect: 0, topics: 0 };
+    const quizAttempted = quiz.correct + quiz.incorrect;
+    const quizPct = quizAttempted > 0 ? Math.round(quiz.correct / quizAttempted * 100) : null;
+    const learnAttempted = learn.correct + learn.incorrect;
+    const learnPct = learnAttempted > 0 ? Math.round(learn.correct / learnAttempted * 100) : null;
+    return { ...cat, correct, incorrect, attempted, pct, mcTotal, fcTotal, seen, learnTopics, flashcardsSeen, quizAttempted, quizPct, learnAttempted, learnPct };
   });
 
   const totalAttempted = catData.reduce((s, c) => s + c.attempted, 0);
@@ -889,18 +895,21 @@ function ProgressAnalytics({ progress }) {
           ),
           React.createElement("span", { style: { fontSize: "0.7rem", padding: "0.15rem 0.5rem", background: m.color + "33", color: m.color, borderRadius: "4px", border: "1px solid " + m.color + "55" } }, m.label)
         ),
-        React.createElement("div", { style: { display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "0.5rem", fontSize: "0.75rem", color: "#8BA0B8" } },
+        React.createElement("div", { style: { display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "0.5rem", fontSize: "0.75rem", color: "#8BA0B8", marginBottom: "0.5rem" } },
           React.createElement("div", null,
-            React.createElement("div", { style: { color: "#A8D8EA", fontSize: "1rem" } }, c.pct !== null ? c.pct + "%" : "—"),
-            "Quiz accuracy (" + c.attempted + " answered)"
+            React.createElement("div", { style: { color: "#A8D8EA", fontSize: "0.7rem", letterSpacing: "1px", textTransform: "uppercase", marginBottom: "0.3rem" } }, "Quiz"),
+            React.createElement("div", { style: { color: "#A8D8EA", fontSize: "1rem" } }, c.quizPct !== null ? c.quizPct + "%" : "—"),
+            c.quizAttempted + " answered, " + c.seen + "/" + c.mcTotal + " seen"
           ),
           React.createElement("div", null,
-            React.createElement("div", { style: { color: "#A8D8EA", fontSize: "1rem" } }, c.seen + "/" + c.mcTotal),
-            "Unique questions seen"
+            React.createElement("div", { style: { color: "#A8D8EA", fontSize: "0.7rem", letterSpacing: "1px", textTransform: "uppercase", marginBottom: "0.3rem" } }, "Learn"),
+            React.createElement("div", { style: { color: "#A8D8EA", fontSize: "1rem" } }, c.learnPct !== null ? c.learnPct + "%" : "—"),
+            c.learnAttempted + " questions, " + c.learnTopics + " topics"
           ),
           React.createElement("div", null,
-            React.createElement("div", { style: { color: "#A8D8EA", fontSize: "1rem" } }, c.flashcardsSeen),
-            "Flashcards of " + c.fcTotal + " reviewed"
+            React.createElement("div", { style: { color: "#A8D8EA", fontSize: "0.7rem", letterSpacing: "1px", textTransform: "uppercase", marginBottom: "0.3rem" } }, "Flashcards"),
+            React.createElement("div", { style: { color: "#A8D8EA", fontSize: "1rem" } }, c.flashcardsSeen + "/" + c.fcTotal),
+            "reviewed"
           )
         ),
         // Progress bar
@@ -2075,17 +2084,33 @@ export default function App() {
   const updateProgress = useCallback((cat, result, meta = {}) => {
     setProgress(prev => {
       const next = { ...prev };
-      if (!next[cat]) next[cat] = { correct: 0, incorrect: 0, seen: [], learnTopics: [], flashcardsSeen: 0 };
+      if (!next[cat]) next[cat] = { correct: 0, incorrect: 0, seen: [], learnTopics: [], flashcardsSeen: 0, quiz: { correct: 0, incorrect: 0 }, learn: { correct: 0, incorrect: 0, topics: 0 }, fc: { seen: 0 } };
+      // Ensure sub-objects exist for older data
+      if (!next[cat].quiz) next[cat].quiz = { correct: 0, incorrect: 0 };
+      if (!next[cat].learn) next[cat].learn = { correct: 0, incorrect: 0, topics: 0 };
+      if (!next[cat].fc) next[cat].fc = { seen: 0 };
+      // Overall totals (backwards compatible)
       if (result === "correct") next[cat].correct++;
       else if (result === "incorrect") next[cat].incorrect++;
       if (meta.questionId && !next[cat].seen.includes(meta.questionId)) {
         next[cat].seen.push(meta.questionId);
       }
+      // Per-mode tracking
+      if (meta.mode === "quiz") {
+        if (result === "correct") next[cat].quiz.correct++;
+        else if (result === "incorrect") next[cat].quiz.incorrect++;
+      }
+      if (meta.mode === "learn") {
+        if (result === "correct") next[cat].learn.correct++;
+        else if (result === "incorrect") next[cat].learn.incorrect++;
+      }
       if (meta.learnTopic && !next[cat].learnTopics.includes(meta.learnTopic)) {
         next[cat].learnTopics.push(meta.learnTopic);
+        next[cat].learn.topics = next[cat].learnTopics.length;
       }
       if (meta.flashcard) {
         next[cat].flashcardsSeen = (next[cat].flashcardsSeen || 0) + 1;
+        next[cat].fc.seen = next[cat].flashcardsSeen;
       }
       saveProgress(next, candidateName);
       return next;
@@ -2655,7 +2680,7 @@ Keep responses under 250 words unless explaining a complex concept.`;
     setTopicCount(c => c + 1);
     // Track learn progress: every 2 exchanges ≈ 1 topic covered
     if (topicCount % 2 === 0 && updateProgress) {
-      updateProgress(category, null, { learnTopic: `${cat.label}_exchange_${topicCount}` });
+      updateProgress(category, null, { learnTopic: `${cat.label}_exchange_${topicCount}`, mode: "learn" });
     }
     setLoading(false);
   };
@@ -2725,7 +2750,7 @@ function QuizMode({ category, cat, name, updateProgress, appSettings, setAppSett
     if (selected.length === 0) return;
     setSubmitted(true);
     const correct = isCorrect();
-    updateProgress(category, correct ? "correct" : "incorrect", { questionId: q.id });
+    updateProgress(category, correct ? "correct" : "incorrect", { questionId: q.id, mode: "quiz" });
     setScore(s => ({ correct: s.correct + (correct ? 1 : 0), total: s.total + 1 }));
     // Track answer anonymously for analytics
     fetch("/api/answer", { method: "POST", headers: { "Content-Type": "application/json" },
@@ -2968,7 +2993,7 @@ Make it test actual rule knowledge, not just definitions. Focus on edge cases an
     if (!selected) return;
     setSubmitted(true);
     const correct = selected === question.correct;
-    updateProgress(category, correct ? "correct" : "incorrect", { questionId: "ai_" + Date.now() });
+    updateProgress(category, correct ? "correct" : "incorrect", { questionId: "ai_" + Date.now(), mode: "learn" });
     setExplanation(question.explanation || "");
   };
 
