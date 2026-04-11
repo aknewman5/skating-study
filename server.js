@@ -751,41 +751,60 @@ if (CONFIG.SENDGRID_API_KEY && CONFIG.EMAIL_TO) {
 // EXISTING: CHAT ENDPOINT (placeholder — integrate with your existing server.js)
 // ══════════════════════════════════════════════════════════════════════════════
 
-// In-memory conversation history per user session
-const conversationHistory = {};
-const MAX_HISTORY_MESSAGES = 20;
+// Per-user free response tracking (in memory, resets on deploy)
+const userUsage = {};
+const FREE_LIMIT = 25;
 
 app.post("/api/chat", async (req, res) => {
   try {
-    const { message, username } = req.body;
-    if (!message) return res.status(400).json({ error: "Message required" });
+    const { messages, system, username, userApiKey } = req.body;
+    if (!messages || !Array.isArray(messages) || messages.length === 0) {
+      return res.status(400).json({ error: "api_error", message: "Messages array required" });
+    }
 
     const key = username || "anonymous";
-    if (!conversationHistory[key]) conversationHistory[key] = [];
-    conversationHistory[key].push({ role: "user", content: message });
-    if (conversationHistory[key].length > MAX_HISTORY_MESSAGES) {
-      conversationHistory[key] = conversationHistory[key].slice(-MAX_HISTORY_MESSAGES);
+
+    // If user supplied their own API key, skip free-limit tracking
+    let apiKeyToUse = userApiKey;
+    if (!apiKeyToUse) {
+      // Check free limit
+      if (!userUsage[key]) userUsage[key] = 0;
+      if (userUsage[key] >= FREE_LIMIT) {
+        return res.json({
+          error: "free_limit_reached",
+          message: `You've used all ${FREE_LIMIT} free AI responses. Add your own Anthropic API key in Settings to continue.`
+        });
+      }
+      apiKeyToUse = CONFIG.ANTHROPIC_API_KEY;
+      if (!apiKeyToUse) {
+        return res.json({ error: "api_error", message: "Server API key not configured. Please add your own API key in Settings." });
+      }
     }
 
-    if (!CONFIG.ANTHROPIC_API_KEY) {
-      return res.json({ response: "API key not configured. Set ANTHROPIC_API_KEY in environment." });
-    }
-
-    const client = new Anthropic({ apiKey: CONFIG.ANTHROPIC_API_KEY });
+    const client = new Anthropic({ apiKey: apiKeyToUse });
     const response = await client.messages.create({
       model: CONFIG.MODEL,
       max_tokens: 4096,
-      system: "You are a figure skating technical panel study assistant.",
-      messages: conversationHistory[key],
+      system: system || "You are a figure skating technical panel study assistant.",
+      messages: messages,
     });
 
-    const text = response.content?.[0]?.text || "No response.";
-    conversationHistory[key].push({ role: "assistant", content: text });
+    // Only increment usage if we used the server's key
+    if (!userApiKey) {
+      userUsage[key]++;
+    }
 
-    res.json({ response: text });
+    res.json({
+      content: response.content,
+      _usage: userApiKey ? null : {
+        used: userUsage[key],
+        limit: FREE_LIMIT,
+        remaining: FREE_LIMIT - userUsage[key]
+      }
+    });
   } catch (e) {
     console.error("Chat error:", e);
-    res.status(500).json({ error: "Chat failed" });
+    res.status(500).json({ error: "api_error", message: e.message || "Chat failed" });
   }
 });
 
