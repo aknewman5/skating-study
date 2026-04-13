@@ -286,18 +286,18 @@
     }
 
     function renderFeedbackItem(f) {
-      const isDispute = f.type === "auto_dispute";
-      const time = new Date(f.timestamp).toLocaleString();
+      const isDispute = f.feedback_type === "dispute";
+      const time = new Date(f.created_at).toLocaleString();
       return `<div class="feedback-item ${isDispute ? 'dispute' : ''}">
         <div class="meta">
-          <strong style="color:${isDispute ? '#F59E0B' : '#0D7377'}">${isDispute ? '⚡ Auto-dispute' : '⚑ Manual report'}</strong>
+          <strong style="color:${isDispute ? '#F59E0B' : '#0D7377'}">${isDispute ? '⚡ Auto-dispute' : '⚑ ' + (f.feedback_type || 'report')}</strong>
           &nbsp;·&nbsp; ${f.username || 'anonymous'} &nbsp;·&nbsp; ${f.category || '?'}/${f.mode || '?'} &nbsp;·&nbsp; ${time}
+          &nbsp;·&nbsp; <span style="color:${f.status === 'pending' ? '#E8A838' : f.status === 'accepted' ? '#1A7A4A' : '#C0392B'}">${f.status || 'pending'}</span>
         </div>
+        ${f.trigger_message ? `<div style="background:rgba(168,216,234,0.08);padding:0.5rem 0.75rem;border-radius:6px;margin:0.4rem 0;font-size:0.85rem;color:#A8D8EA;white-space:pre-wrap">${escHtml(f.trigger_message)}</div>` : ''}
         ${f.issue ? `<div class="issue">${escHtml(f.issue)}</div>` : ''}
-        ${f.triggerMessage ? `<div class="issue">"${escHtml(f.triggerMessage)}"</div>` : ''}
         ${f.correction ? `<div class="correction">Suggested: ${escHtml(f.correction)}</div>` : ''}
-        ${f.aiResponse ? `<div class="ai-response" onclick="this.classList.toggle('expanded')">AI said: ${escHtml(f.aiResponse)}</div>` : ''}
-        ${f.conversation ? `<div class="convo" onclick="this.classList.toggle('expanded')">${escHtml(f.conversation)}</div>` : ''}
+        ${f.ai_response ? `<div class="ai-response" onclick="this.classList.toggle('expanded')">AI said: ${escHtml(f.ai_response)}</div>` : ''}
       </div>`;
     }
 
