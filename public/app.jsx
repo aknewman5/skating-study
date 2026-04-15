@@ -920,7 +920,47 @@ function ProgressAnalytics({ progress }) {
           )
         ) : null
       );
-    })
+    }),
+    // Review Updated Questions section
+    (function() {
+      var modified = window._modifiedQuestionIds || {};
+      var modifiedIds = Object.keys(modified);
+      if (modifiedIds.length === 0) return null;
+      // Find which modified questions the user has previously attempted
+      var attempted = [];
+      CATEGORIES.forEach(function(cat) {
+        var p = progress[cat.id] || {};
+        var seen = p.seen || [];
+        seen.forEach(function(qId) {
+          if (modified[qId]) {
+            var q = QUESTION_BANK.mc_questions.find(function(m) { return m.id === qId; });
+            if (q) attempted.push({ id: qId, question: q.question, category: cat.id, catLabel: cat.label, catColor: cat.color, updated: modified[qId] });
+          }
+        });
+      });
+      if (attempted.length === 0) return null;
+      return React.createElement("div", { style: { marginTop: "1.5rem" } },
+        React.createElement("div", { style: { fontSize: "0.75rem", letterSpacing: "2px", textTransform: "uppercase", color: "#E8A838", marginBottom: "0.75rem" } },
+          "Updated Questions You Previously Attempted (" + attempted.length + ")"
+        ),
+        React.createElement("p", { style: { fontSize: "0.8rem", color: "#8BA0B8", marginBottom: "0.75rem" } },
+          "These questions have been corrected since you last answered them. Consider retrying them in Quiz mode."
+        ),
+        attempted.map(function(a) {
+          return React.createElement("div", { key: a.id, style: {
+            background: "rgba(232,168,56,0.08)", border: "1px solid rgba(232,168,56,0.2)",
+            borderRadius: "8px", padding: "0.75rem", marginBottom: "0.5rem", borderLeft: "3px solid " + a.catColor
+          }},
+            React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.25rem" } },
+              React.createElement("span", { style: { fontSize: "0.75rem", color: "#A8D8EA" } }, a.id),
+              React.createElement("span", { style: { fontSize: "0.65rem", padding: "0.1rem 0.4rem", background: "rgba(13,115,119,0.25)", color: "#A8D8EA", borderRadius: "3px" } }, "Updated")
+            ),
+            React.createElement("div", { style: { fontSize: "0.85rem", color: "#C0D0E8", lineHeight: 1.5 } }, a.question.substring(0, 150) + (a.question.length > 150 ? "..." : "")),
+            React.createElement("div", { style: { fontSize: "0.65rem", color: "#6B8CAE", marginTop: "0.25rem" } }, a.catLabel)
+          );
+        })
+      );
+    })()
   );
 }
 
@@ -2067,6 +2107,13 @@ export default function App() {
             }
           });
         }
+        // Store modified question IDs globally for "Updated" badges
+        if (data.modifiedIds && data.modifiedIds.length > 0) {
+          window._modifiedQuestionIds = {};
+          data.modifiedIds.forEach(function(m) {
+            window._modifiedQuestionIds[m.id] = m.updated_at;
+          });
+        }
         if (data.framework) { FRAMEWORK_CONTENT = data.framework; }
       } catch (e) { console.warn("Failed to load content overrides:", e); }
       setContentReady(true);
@@ -2854,6 +2901,11 @@ ${correct ? "Candidate got this right. Give a brief confirmation (1-2 sentences)
               border: "1px solid rgba(13,115,119,0.4)", borderRadius: "6px",
               color: "#A8D8EA", textDecoration: "none", fontSize: "0.8rem",
             }}>▶ Watch Video</a>
+          </div>
+        )}
+        {window._modifiedQuestionIds && window._modifiedQuestionIds[q.id] && (
+          <div style={{ display: "inline-block", padding: "0.15rem 0.5rem", background: "rgba(13,115,119,0.25)", border: "1px solid rgba(13,115,119,0.5)", borderRadius: "4px", fontSize: "0.7rem", color: "#A8D8EA", marginBottom: "0.5rem" }}>
+            Updated
           </div>
         )}
         <p style={{ margin: 0, lineHeight: 1.7, fontSize: "0.95rem" }}>

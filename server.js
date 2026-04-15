@@ -652,7 +652,15 @@ app.put("/api/admin/content/:id", requireAdmin, (req, res) => {
     if (!type || !category || !data) {
       return res.status(400).json({ error: "type, category, and data are required" });
     }
+    // Check if this is an update to an existing item (not a new creation or deletion)
+    const existing = stmts.getOverride.get(id);
     stmts.upsertOverride.run(id, type, category, JSON.stringify(data));
+    // Auto-add changelog entry for content updates (not deletions or new items)
+    if (!data._deleted && existing) {
+      const title = type === "mc" ? "Updated question: " + id : "Updated flashcard: " + id;
+      const desc = data.question || data.front || id;
+      stmts.insertChangelog.run(null, title, desc.substring(0, 200), category, "fix");
+    }
     res.json({ ok: true });
   } catch (e) {
     console.error("Content save error:", e);
@@ -679,9 +687,14 @@ app.get("/api/content/overrides", (req, res) => {
     const defaultMCIds = new Set(QUESTION_BANK_DEFAULTS.mc_questions.map(q => q.id));
     const defaultFCIds = new Set(QUESTION_BANK_DEFAULTS.flashcards.map(f => f.id));
 
+    const modifiedIds = [];
     overrides.forEach(o => {
       const parsed = JSON.parse(o.data);
       overrideMap[o.id] = parsed;
+      // Track modified question IDs with timestamps
+      if (!parsed._deleted && (defaultMCIds.has(o.id) || defaultFCIds.has(o.id))) {
+        modifiedIds.push({ id: o.id, updated_at: o.updated_at });
+      }
       // Track new items that aren't in defaults
       if (!parsed._deleted && !defaultMCIds.has(o.id) && !defaultFCIds.has(o.id)) {
         newItems.push({ ...parsed, id: o.id, category: o.category, _type: o.type });
@@ -693,6 +706,7 @@ app.get("/api/content/overrides", (req, res) => {
     res.json({
       overrides: overrideMap,
       newItems: newItems,
+      modifiedIds: modifiedIds,
       framework: frameworkRow ? frameworkRow.content : null
     });
   } catch (e) {
