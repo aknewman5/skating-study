@@ -774,25 +774,67 @@
       // Most missed questions
       var missed = analyticsData.mostMissed || [];
       if (missed.length > 0) {
-        html += '<div class="card"><div class="card-header">Most Missed Questions (2+ attempts, lowest accuracy first)</div>';
+        var reviewed = JSON.parse(localStorage.getItem('reviewed_questions') || '{}');
+        var reviewedCount = missed.filter(function(q) { return reviewed[q.question_id]; }).length;
+        html += '<div class="card"><div class="card-header">Most Missed Questions (' + reviewedCount + '/' + missed.length + ' reviewed)</div>';
+        html += '<div style="display:flex;gap:0.5rem;margin-bottom:0.75rem">';
+        html += '<button class="refresh-btn" onclick="filterMissed(\'all\')" style="background:rgba(13,115,119,0.2);font-size:0.75rem">All (' + missed.length + ')</button>';
+        html += '<button class="refresh-btn" onclick="filterMissed(\'unreviewed\')" style="font-size:0.75rem">Unreviewed (' + (missed.length - reviewedCount) + ')</button>';
+        html += '<button class="refresh-btn" onclick="filterMissed(\'reviewed\')" style="font-size:0.75rem">Reviewed (' + reviewedCount + ')</button>';
+        html += '</div>';
+        html += '<div id="missed-list">';
         missed.forEach(function(q) {
           var pct = q.accuracy || 0;
           var color = pct < 50 ? '#F87171' : pct < 70 ? '#F59E0B' : '#34D399';
-          // Try to find the question text
           var mcQ = contentData.mc_questions.find(function(m) { return m.id === q.question_id; });
-          var preview = mcQ ? mcQ.question.substring(0, 120) : q.question_id;
-          html += '<div style="padding:0.5rem 0;border-bottom:1px solid rgba(255,255,255,0.04)">';
+          var preview = mcQ ? mcQ.question.substring(0, 150) : q.question_id;
+          var isReviewed = reviewed[q.question_id];
+          html += '<div class="missed-item" data-reviewed="' + (isReviewed ? 'yes' : 'no') + '" style="padding:0.75rem;border-bottom:1px solid rgba(255,255,255,0.04);' + (isReviewed ? 'opacity:0.5;' : '') + '">';
           html += '<div style="display:flex;justify-content:space-between;align-items:center">';
+          html += '<div style="display:flex;align-items:center;gap:0.5rem">';
+          html += '<input type="checkbox" ' + (isReviewed ? 'checked' : '') + ' onchange="toggleReviewed(\'' + q.question_id + '\', this.checked)" style="cursor:pointer" />';
           html += '<span style="font-size:0.8rem;color:#A8D8EA">' + q.question_id + '</span>';
-          html += '<span style="color:' + color + ';font-size:0.85rem">' + pct + '% (' + q.correct_count + '/' + q.attempts + ')</span>';
+          if (isReviewed) html += '<span style="font-size:0.65rem;padding:0.1rem 0.3rem;background:rgba(26,122,74,0.2);color:#34D399;border-radius:3px">Reviewed</span>';
           html += '</div>';
-          html += '<div style="font-size:0.8rem;color:#6B8CAE;margin-top:0.2rem">' + escHtml(preview) + '</div>';
+          html += '<div style="display:flex;align-items:center;gap:0.75rem">';
+          html += '<span style="color:' + color + ';font-size:0.85rem">' + pct + '% (' + q.correct_count + '/' + q.attempts + ')</span>';
+          html += '<button onclick="editFromAnalytics(\'' + q.question_id + '\')" style="background:none;border:1px solid rgba(168,216,234,0.3);color:#A8D8EA;padding:0.2rem 0.5rem;border-radius:4px;cursor:pointer;font-size:0.7rem">Edit</button>';
+          html += '</div>';
+          html += '</div>';
+          html += '<div style="font-size:0.8rem;color:#6B8CAE;margin-top:0.3rem;margin-left:1.5rem">' + escHtml(preview) + '</div>';
           html += '</div>';
         });
-        html += '</div>';
+        html += '</div></div>';
       }
 
       return html;
+    }
+
+    function toggleReviewed(questionId, checked) {
+      var reviewed = JSON.parse(localStorage.getItem('reviewed_questions') || '{}');
+      if (checked) {
+        reviewed[questionId] = new Date().toISOString();
+      } else {
+        delete reviewed[questionId];
+      }
+      localStorage.setItem('reviewed_questions', JSON.stringify(reviewed));
+      render();
+    }
+
+    function filterMissed(filter) {
+      var items = document.querySelectorAll('.missed-item');
+      items.forEach(function(el) {
+        if (filter === 'all') { el.style.display = ''; return; }
+        var isReviewed = el.getAttribute('data-reviewed') === 'yes';
+        el.style.display = (filter === 'reviewed' && isReviewed) || (filter === 'unreviewed' && !isReviewed) ? '' : 'none';
+      });
+    }
+
+    function editFromAnalytics(questionId) {
+      activeTab = 'content';
+      contentFilter.type = 'mc';
+      expandedItem = questionId;
+      render();
     }
 
     function switchTab(tab) { activeTab = tab; render(); }
