@@ -2445,6 +2445,30 @@ function Dashboard({ name, progress, onSelectMode, onHome, onSettings, appSettin
   const totalCorrect = Object.values(progress).reduce((s, p) => s + (p.correct || 0), 0);
   const totalAttempted = Object.values(progress).reduce((s, p) => s + (p.correct || 0) + (p.incorrect || 0), 0);
   const [dashTab, setDashTab] = useState("study");
+  const [newChangelogCount, setNewChangelogCount] = useState(0);
+  const [changelogBanner, setChangelogBanner] = useState(false);
+
+  // Check for new changelog entries on mount
+  useEffect(function() {
+    (async function() {
+      try {
+        var res = await fetch("/api/changelog?limit=50");
+        var data = await res.json();
+        var entries = data.changelog || [];
+        var lastSeen = localStorage.getItem("changelog_last_seen") || "1970-01-01";
+        var newCount = entries.filter(function(e) { return e.created_at > lastSeen; }).length;
+        setNewChangelogCount(newCount);
+        if (newCount > 0) setChangelogBanner(true);
+      } catch(e) {}
+    })();
+  }, []);
+
+  var openChangelog = function() {
+    setDashTab("changelog");
+    setNewChangelogCount(0);
+    setChangelogBanner(false);
+    localStorage.setItem("changelog_last_seen", new Date().toISOString());
+  };
 
   return (
     <div style={{ minHeight: "100vh", background: "#0A1628", fontFamily: "'Georgia', serif", color: "#FFFFFF" }}>
@@ -2480,8 +2504,31 @@ function Dashboard({ name, progress, onSelectMode, onHome, onSettings, appSettin
         </div>
       </div>
 
+      {/* Changelog banner */}
+      {changelogBanner && (
+        <div style={{
+          maxWidth: "1000px", margin: "0 auto", padding: "0.75rem 2rem",
+        }}>
+          <div onClick={openChangelog} style={{
+            background: "rgba(232,168,56,0.12)", border: "1px solid rgba(232,168,56,0.3)",
+            borderRadius: "8px", padding: "0.75rem 1rem", cursor: "pointer",
+            display: "flex", alignItems: "center", justifyContent: "space-between",
+          }}>
+            <div>
+              <span style={{ color: "#E8A838", fontWeight: "bold", fontSize: "0.9rem" }}>
+                {newChangelogCount} question{newChangelogCount !== 1 ? "s" : ""} updated
+              </span>
+              <span style={{ color: "#8BA0B8", fontSize: "0.85rem", marginLeft: "0.75rem" }}>
+                Some questions have been corrected. Tap to see what changed.
+              </span>
+            </div>
+            <span style={{ color: "#E8A838", fontSize: "0.8rem" }}>View ></span>
+          </div>
+        </div>
+      )}
+
       {/* Dashboard tabs */}
-      <div style={{ borderBottom: "1px solid rgba(255,255,255,0.08)", display: "flex", maxWidth: "1000px", margin: "0 auto", padding: "0 2rem" }}>
+      <div style={{ borderBottom: "1px solid rgba(255,255,255,0.08)", display: "flex", maxWidth: "1000px", margin: "0 auto", padding: "0 2rem", flexWrap: "wrap" }}>
         {[
           { id: "study", label: "📖 Study" },
           { id: "progress", label: "📊 My Progress" },
@@ -2489,13 +2536,13 @@ function Dashboard({ name, progress, onSelectMode, onHome, onSettings, appSettin
           { id: "handbook", label: "📄 TPH Handbook" },
           { id: "materials", label: "📂 Materials" },
           { id: "guide", label: "📋 Guide" },
-          { id: "changelog", label: "📝 Changelog" },
+          { id: "changelog", label: "📝 Changelog" + (newChangelogCount > 0 ? " (" + newChangelogCount + ")" : "") },
           { id: "admin", label: "🔧 Admin" },
         ].map(tab => (
-          <button key={tab.id} onClick={() => setDashTab(tab.id)} style={{
+          <button key={tab.id} onClick={tab.id === "changelog" ? openChangelog : function() { setDashTab(tab.id); }} style={{
             padding: "0.7rem 1.25rem", background: "none", border: "none",
             borderBottom: dashTab === tab.id ? "2px solid #0D7377" : "2px solid transparent",
-            color: dashTab === tab.id ? "#A8D8EA" : "#6B8CAE",
+            color: dashTab === tab.id ? "#A8D8EA" : tab.id === "changelog" && newChangelogCount > 0 ? "#E8A838" : "#6B8CAE",
             fontSize: "0.85rem", cursor: "pointer", fontFamily: "inherit",
             transition: "all 0.15s",
           }}>{tab.label}</button>
